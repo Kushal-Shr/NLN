@@ -15,7 +15,7 @@ function ChatShell({ children }: { children: React.ReactNode }) {
     : null;
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-screen overflow-hidden pt-16">
       <ChatSidebar
         activeChatId={activeChatId}
         onNuke={nukeSession}

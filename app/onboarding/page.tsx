@@ -52,7 +52,7 @@ export default function OnboardingPage(){
     localStorage.setItem("sanctuary_language", language);
     localStorage.setItem("sanctuary_mode", mode || "anonymous");
     
-    router.push("/");
+    router.push("/dashboard");
   };
 
   return (
@@ -134,7 +134,7 @@ No Judgement. No Pressure. You can always change this later.
   What brings you comfort? 
 </h1>
 <p className="text-white/40 text-sm mb-10">
-We'll shape your experience around waht feels right to you. 
+We&apos;ll shape your experience around what feels right to you.
 </p>
 <div className="grid grid-cols-2 gap-3">
               {comfortOptions.map((option) => (

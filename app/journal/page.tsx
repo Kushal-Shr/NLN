@@ -59,7 +59,7 @@ export default function JournalPage() {
   );
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-950">
+    <div className="flex h-screen overflow-hidden bg-slate-950 pt-16">
       {/* Mobile toggle */}
       <button
         type="button"

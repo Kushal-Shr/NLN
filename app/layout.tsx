@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
+import NavbarWrapper from "@/components/shared/NavbarWrapper";
 import QuickExit from "@/components/shared/QuickExit";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "NLN Stealth",
-  description: "Stealth-themed support workspace",
+  title: "Sanctuary",
+  description: "Resilience through Cultural Wisdom",
 };
 
 export default function RootLayout({
@@ -15,7 +16,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="text-stealth-text antialiased">
-        {children}
+        <NavbarWrapper />
+        <div id="app-content">{children}</div>
         <QuickExit />
       </body>
     </html>
