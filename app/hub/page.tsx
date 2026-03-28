@@ -7,6 +7,7 @@ import VibeCheck, { FEELINGS } from "@/components/features/hub/VibeCheck";
 import SearchBar from "@/components/features/hub/SearchBar";
 import ResourceCards from "@/components/features/hub/ResourceCards";
 import WisdomOutput from "@/components/features/hub/WisdomOutput";
+import PageContainer from "@/components/shared/PageContainer";
 import type { GeminiResponse } from "@/lib/gemini";
 
 export default function HubPage() {
@@ -57,6 +58,7 @@ export default function HubPage() {
   }, [selectedFeelings, query]);
 
   return (
+    <PageContainer>
     <main className="space-y-10">
       {/* Header */}
       <motion.header
@@ -120,5 +122,6 @@ export default function HubPage() {
       {/* Resource Cards */}
       <ResourceCards data={result} />
     </main>
+    </PageContainer>
   );
 }

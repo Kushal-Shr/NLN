@@ -1,7 +1,9 @@
 import Link from "next/link";
+import PageContainer from "@/components/shared/PageContainer";
 
 export default function HomePage() {
   return (
+    <PageContainer>
     <main className="space-y-6">
       <p className="text-sm uppercase tracking-[0.2em] text-stealth-muted">
         Stealth Workspace
@@ -28,5 +30,6 @@ export default function HomePage() {
         </Link>
       </div>
     </main>
+    </PageContainer>
   );
 }
