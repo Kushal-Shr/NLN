@@ -1,5 +1,10 @@
 "use client";
 
+// ============================================================
+// components/features/journal/EntryEditor.tsx
+// Main writing area — title, body, energy, auto-nuke, wisdom
+// ============================================================
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { PenLine, ShieldCheck, Timer, Loader2 } from "lucide-react";
@@ -7,6 +12,7 @@ import EnergyTracker from "./EnergyTracker";
 import WisdomNugget from "./WisdomNugget";
 import type { JournalEntry } from "./types";
 import type { JournalInsight } from "@/lib/gemini";
+import { useTheme } from "@/lib/ThemeContext";
 
 type EntryEditorProps = {
   entry: JournalEntry;
@@ -14,40 +20,30 @@ type EntryEditorProps = {
   onUpdate: (patch: Partial<JournalEntry>) => void;
 };
 
-export default function EntryEditor({
-  entry,
-  spark,
-  onUpdate,
-}: EntryEditorProps) {
-  const [saveState, setSaveState] = useState<"saved" | "saving" | "idle">("idle");
-  const [nugget, setNugget] = useState<string | null>(null);
+export default function EntryEditor({ entry, spark, onUpdate }: EntryEditorProps) {
+  const theme = useTheme();
+
+  const [saveState,      setSaveState]      = useState<"saved" | "saving" | "idle">("idle");
+  const [nugget,         setNugget]         = useState<string | null>(null);
   const [insightLoading, setInsightLoading] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const handleBodyChange = useCallback(
-    (value: string) => {
-      onUpdate({ body: value });
-      setSaveState("saving");
-
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(() => {
-        setSaveState("saved");
-      }, 800);
-    },
-    [onUpdate]
-  );
+  const handleBodyChange = useCallback((value: string) => {
+    onUpdate({ body: value });
+    setSaveState("saving");
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => setSaveState("saved"), 800);
+  }, [onUpdate]);
 
   useEffect(() => {
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, []);
 
   const handleInsight = useCallback(async () => {
     if (!entry.body.trim()) return;
     setInsightLoading(true);
     try {
-      const res = await fetch("/api/journal-insight", {
+      const res  = await fetch("/api/journal-insight", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ entry: entry.body }),
@@ -67,93 +63,143 @@ export default function EntryEditor({
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="flex flex-1 flex-col overflow-y-auto"
+      style={{ flex: 1, display: "flex", flexDirection: "column", overflowY: "auto" }}
     >
-      <div className="mx-auto w-full max-w-2xl space-y-6 px-6 py-8">
-        {/* Daily Spark */}
+      <div style={{ maxWidth: "680px", width: "100%", margin: "0 auto", padding: "32px 24px", display: "flex", flexDirection: "column", gap: "24px" }}>
+
+        {/* Daily Spark — quote shown at top to inspire writing */}
         {spark && (
           <motion.div
             initial={{ opacity: 0, filter: "blur(6px)" }}
             animate={{ opacity: 1, filter: "blur(0px)" }}
             transition={{ duration: 0.7 }}
-            className="rounded-xl border border-stealth-accent/20 bg-stealth-accent/5 p-4"
+            style={{
+              borderRadius: "12px",
+              border: `1px solid ${theme.accent}25`,
+              background: `${theme.accent}08`,
+              padding: "16px",
+            }}
           >
-            <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-stealth-accent">
+            <p style={{ fontSize: "10px", fontFamily: "sans-serif", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: theme.accent, marginBottom: "6px" }}>
               Daily Spark
             </p>
-            <p className="text-sm italic text-stealth-text/80">{spark}</p>
+            <p style={{ fontSize: "13px", fontStyle: "italic", color: theme.text, opacity: 0.8, lineHeight: 1.6 }}>
+              {spark}
+            </p>
           </motion.div>
         )}
 
-        {/* Title */}
+        {/* Title input */}
         <input
           type="text"
           value={entry.title}
           onChange={(e) => onUpdate({ title: e.target.value })}
           placeholder="Untitled reflection..."
-          className="w-full bg-transparent text-2xl font-semibold text-stealth-text placeholder:text-stealth-muted/30 focus:outline-none"
+          style={{
+            width: "100%",
+            background: "transparent",
+            border: "none",
+            outline: "none",
+            fontSize: "24px",
+            fontFamily: "'Georgia', serif",
+            fontWeight: 600,
+            color: theme.text,
+            padding: 0,
+          }}
         />
 
         {/* Auto-save indicator */}
-        <div className="flex items-center gap-2">
-          <PenLine className="h-3 w-3 text-stealth-muted/40" />
-          <span className="text-[11px] text-stealth-muted/50">
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <PenLine size={12} color={theme.textMuted} style={{ opacity: 0.4 }} />
+          <span style={{ fontSize: "11px", fontFamily: "sans-serif", color: theme.textMuted, opacity: 0.5 }}>
             {saveState === "saving" && (
-              <span className="inline-flex items-center gap-1">
-                <Loader2 className="h-3 w-3 animate-spin" /> Saving...
+              <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                <Loader2 size={12} style={{ animation: "spin 1s linear infinite" }} />
+                Saving...
               </span>
             )}
             {saveState === "saved" && "Saved"}
-            {saveState === "idle" && "Ready"}
+            {saveState === "idle"  && "Ready"}
           </span>
         </div>
 
-        {/* Writing area */}
+        {/* Writing textarea */}
         <textarea
           value={entry.body}
           onChange={(e) => handleBodyChange(e.target.value)}
           placeholder="Begin writing — let it flow without judgment..."
           rows={12}
-          className="w-full resize-none bg-transparent text-sm leading-relaxed text-stealth-text placeholder:text-stealth-muted/30 focus:outline-none"
+          style={{
+            width: "100%",
+            background: "transparent",
+            border: "none",
+            outline: "none",
+            resize: "none",
+            fontSize: "14px",
+            fontFamily: "'Georgia', serif",
+            lineHeight: 1.8,
+            color: theme.text,
+            padding: 0,
+          }}
         />
 
-        {/* Energy Tracker */}
+        {/* Energy tracker slider */}
         <EnergyTracker
           value={entry.energy}
           onChange={(v) => onUpdate({ energy: v })}
         />
 
-        {/* Auto-Nuke toggle */}
-        <div className="flex items-center justify-between rounded-lg border border-white/10 bg-stealth-card/50 px-4 py-3">
-          <div className="flex items-center gap-2">
-            <Timer className="h-4 w-4 text-red-400/70" />
+        {/* Auto-nuke toggle */}
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          borderRadius: "12px",
+          border: `1px solid ${theme.cardBorder}`,
+          background: `${theme.cardBg}80`,
+          padding: "12px 16px",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <Timer size={16} color="#e05555" style={{ opacity: 0.7 }} />
             <div>
-              <p className="text-xs font-medium text-stealth-text">
+              <p style={{ fontSize: "12px", fontFamily: "sans-serif", fontWeight: 500, color: theme.text, marginBottom: "2px" }}>
                 Self-Destruct after 24 hours
               </p>
-              <p className="text-[10px] text-stealth-muted">
-                Entry will auto-nuke for your safety.
+              <p style={{ fontSize: "10px", fontFamily: "sans-serif", color: theme.textMuted }}>
+                Entry will auto-delete for your safety.
               </p>
             </div>
           </div>
+
+          {/* Toggle switch */}
           <button
             type="button"
             role="switch"
             aria-checked={entry.autoNuke}
             onClick={() => onUpdate({ autoNuke: !entry.autoNuke })}
-            className={`relative h-6 w-11 rounded-full transition ${
-              entry.autoNuke ? "bg-red-500/60" : "bg-slate-700"
-            }`}
+            style={{
+              position: "relative",
+              width: "44px", height: "24px",
+              borderRadius: "12px",
+              border: "none",
+              cursor: "pointer",
+              transition: "background 0.2s",
+              background: entry.autoNuke ? "rgba(224,85,85,0.6)" : theme.cardBorder,
+              flexShrink: 0,
+            }}
           >
-            <span
-              className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
-                entry.autoNuke ? "translate-x-5" : "translate-x-0"
-              }`}
-            />
+            <span style={{
+              position: "absolute",
+              top: "2px",
+              left: entry.autoNuke ? "22px" : "2px",
+              width: "20px", height: "20px",
+              borderRadius: "50%",
+              background: "white",
+              transition: "left 0.2s",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
+            }} />
           </button>
         </div>
 
-        {/* Wisdom Nugget */}
+        {/* Wisdom nugget */}
         <WisdomNugget
           nugget={nugget}
           loading={insightLoading}
@@ -162,12 +208,13 @@ export default function EntryEditor({
         />
 
         {/* Encryption note */}
-        <div className="flex items-center gap-2 pb-6 pt-2">
-          <ShieldCheck className="h-3.5 w-3.5 text-stealth-accent/50" />
-          <p className="text-[11px] text-stealth-muted/50">
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", paddingBottom: "24px" }}>
+          <ShieldCheck size={13} color={theme.accent} style={{ opacity: 0.5 }} />
+          <p style={{ fontSize: "11px", fontFamily: "sans-serif", color: theme.textMuted, opacity: 0.5 }}>
             Your words are encrypted and owned by you.
           </p>
         </div>
+
       </div>
     </motion.div>
   );

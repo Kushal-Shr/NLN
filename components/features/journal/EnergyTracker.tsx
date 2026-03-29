@@ -1,6 +1,12 @@
 "use client";
 
+// ============================================================
+// components/features/journal/EnergyTracker.tsx
+// Slider showing inner energy level — Depleted to Radiant
+// ============================================================
+
 import { Zap } from "lucide-react";
+import { useTheme } from "@/lib/ThemeContext";
 
 type EnergyTrackerProps = {
   value: number;
@@ -16,33 +22,46 @@ function energyLabel(v: number) {
 }
 
 export default function EnergyTracker({ value, onChange }: EnergyTrackerProps) {
+  const theme = useTheme();
+
   return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1.5">
-          <Zap className="h-3.5 w-3.5 text-amber-400" />
-          <span className="text-xs font-medium text-stealth-muted">
+    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+
+      {/* Label row */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <Zap size={13} color="#C6A868" />
+          <span style={{ fontSize: "12px", fontFamily: "sans-serif", color: theme.textMuted }}>
             Inner Energy
           </span>
         </div>
-        <span className="text-xs font-semibold text-stealth-text">
+        <span style={{ fontSize: "12px", fontFamily: "sans-serif", fontWeight: 600, color: theme.text }}>
           {energyLabel(value)}
         </span>
       </div>
 
+      {/* Slider */}
       <input
         type="range"
         min={0}
         max={100}
+        step={1}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-slate-700 accent-stealth-accent outline-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-stealth-accent [&::-webkit-slider-thumb]:shadow-md"
+        style={{
+          width: "100%",
+          accentColor: theme.accent,
+          cursor: "pointer",
+          height: "4px",
+        }}
       />
 
-      <div className="flex justify-between text-[10px] text-stealth-muted/50">
-        <span>Depleted</span>
-        <span>Radiant</span>
+      {/* Min/max labels */}
+      <div style={{ display: "flex", justifyContent: "space-between" }}>
+        <span style={{ fontSize: "10px", fontFamily: "sans-serif", color: theme.textMuted, opacity: 0.5 }}>Depleted</span>
+        <span style={{ fontSize: "10px", fontFamily: "sans-serif", color: theme.textMuted, opacity: 0.5 }}>Radiant</span>
       </div>
+
     </div>
   );
 }

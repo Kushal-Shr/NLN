@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import NavbarWrapper from "@/components/shared/NavbarWrapper";
 import QuickExit from "@/components/shared/QuickExit";
+import { ThemeProvider } from "@/lib/ThemeContext";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -15,10 +16,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="text-stealth-text antialiased">
-        <NavbarWrapper />
-        <div id="app-content">{children}</div>
-        <QuickExit />
+      <body>
+        <ThemeProvider>
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

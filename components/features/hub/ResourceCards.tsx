@@ -1,48 +1,62 @@
 "use client";
 
+// ============================================================
+// components/features/hub/ResourceCards.tsx
+// Three result cards shown after AI generates wisdom
+// ============================================================
+
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, HeartPulse, ExternalLink } from "lucide-react";
 import type { GeminiResponse } from "@/lib/gemini";
+import { useTheme } from "@/lib/ThemeContext";
 
 type ResourceCardsProps = {
   data: GeminiResponse | null;
 };
 
+// Staggered animation — each card appears slightly after the last
 const cardVariants = {
   hidden: { opacity: 0, y: 16 },
   visible: (i: number) => ({
-    opacity: 1,
-    y: 0,
+    opacity: 1, y: 0,
     transition: { delay: i * 0.12, type: "spring" as const, stiffness: 300, damping: 24 },
   }),
 };
 
 export default function ResourceCards({ data }: ResourceCardsProps) {
+  const theme = useTheme();
+
+  // Don't render anything until there's AI data to show
   if (!data) return null;
 
+  // Three card types — each with slightly different accent
+  // We derive softer versions of the theme accent for variety
   const cards = [
     {
       type: "Internal Wisdom",
       icon: Sparkles,
-      accent: "text-amber-400",
-      border: "border-amber-400/20",
-      bg: "bg-amber-400/5",
+      // Amber tint for wisdom — warm
+      accentColor: "#C6A868",
+      bgColor: "rgba(198,168,104,0.08)",
+      borderColor: "rgba(198,168,104,0.2)",
       content: data.wisdom,
     },
     {
       type: "Physical Practice",
       icon: HeartPulse,
-      accent: "text-emerald-400",
-      border: "border-emerald-400/20",
-      bg: "bg-emerald-400/5",
+      // Green tint for physical — natural
+      accentColor: "#7AAB82",
+      bgColor: "rgba(122,171,130,0.08)",
+      borderColor: "rgba(122,171,130,0.2)",
       content: data.practice,
     },
     {
       type: "External Path",
       icon: ExternalLink,
-      accent: "text-sky-400",
-      border: "border-sky-400/20",
-      bg: "bg-sky-400/5",
+      // Blue tint for external — sky, open
+      accentColor: "#6FA3C8",
+      bgColor: "rgba(111,163,200,0.08)",
+      borderColor: "rgba(111,163,200,0.2)",
       content: data.metaphor,
     },
   ];
@@ -51,15 +65,21 @@ export default function ResourceCards({ data }: ResourceCardsProps) {
     <AnimatePresence mode="wait">
       <motion.section
         key="resource-results"
-        className="space-y-4"
         initial="hidden"
         animate="visible"
+        style={{ marginTop: "32px" }}
       >
-        <h3 className="text-sm font-semibold uppercase tracking-widest text-stealth-muted">
+        {/* Section label */}
+        <p style={{
+          fontSize: "11px", fontFamily: "sans-serif",
+          letterSpacing: "0.16em", textTransform: "uppercase",
+          color: theme.textMuted, marginBottom: "14px",
+        }}>
           Resource Results
-        </h3>
+        </p>
 
-        <div className="grid gap-4 md:grid-cols-3">
+        {/* Three cards side by side */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "14px" }}>
           {cards.map((card, i) => {
             const Icon = card.icon;
             return (
@@ -67,15 +87,30 @@ export default function ResourceCards({ data }: ResourceCardsProps) {
                 key={card.type}
                 custom={i}
                 variants={cardVariants}
-                className={`rounded-xl border ${card.border} ${card.bg} p-5 space-y-3`}
+                style={{
+                  borderRadius: "14px",
+                  border: `1px solid ${card.borderColor}`,
+                  background: card.bgColor,
+                  padding: "20px",
+                }}
               >
-                <div className="flex items-center gap-2">
-                  <Icon className={`h-4 w-4 ${card.accent}`} />
-                  <span className={`text-xs font-semibold uppercase tracking-wider ${card.accent}`}>
+                {/* Icon + type label */}
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px" }}>
+                  <Icon style={{ width: "16px", height: "16px", color: card.accentColor }} />
+                  <span style={{
+                    fontSize: "10px", fontFamily: "sans-serif",
+                    fontWeight: 600, letterSpacing: "0.14em",
+                    textTransform: "uppercase", color: card.accentColor,
+                  }}>
                     {card.type}
                   </span>
                 </div>
-                <p className="text-sm leading-relaxed text-stealth-text">
+
+                {/* The actual content from AI */}
+                <p style={{
+                  fontSize: "13px", fontFamily: "sans-serif",
+                  lineHeight: 1.7, color: theme.text, opacity: 0.9,
+                }}>
                   {card.content}
                 </p>
               </motion.div>

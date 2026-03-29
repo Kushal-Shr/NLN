@@ -1,9 +1,15 @@
 "use client";
 
-import { Search, BookOpen } from "lucide-react";
+// ============================================================
+// components/features/journal/JournalSidebar.tsx
+// Left sidebar — entry list, search, new entry button
+// ============================================================
+
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Search, BookOpen } from "lucide-react";
 import type { JournalEntry } from "./types";
+import { useTheme } from "@/lib/ThemeContext";
 
 type JournalSidebarProps = {
   entries: JournalEntry[];
@@ -13,60 +19,102 @@ type JournalSidebarProps = {
 };
 
 function formatDate(iso: string) {
-  const d = new Date(iso);
-  return d.toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-  });
+  return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
-export default function JournalSidebar({
-  entries,
-  activeId,
-  onSelect,
-  onNew,
-}: JournalSidebarProps) {
+export default function JournalSidebar({ entries, activeId, onSelect, onNew }: JournalSidebarProps) {
+  const theme = useTheme();
   const [search, setSearch] = useState("");
 
-  const filtered = entries.filter(
-    (e) =>
-      e.title.toLowerCase().includes(search.toLowerCase()) ||
-      e.body.toLowerCase().includes(search.toLowerCase())
+  const filtered = entries.filter((e) =>
+    e.title.toLowerCase().includes(search.toLowerCase()) ||
+    e.body.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
-    <aside className="flex w-72 shrink-0 flex-col border-r border-white/10 bg-slate-950/80">
+    <aside style={{
+      width: "280px",
+      flexShrink: 0,
+      display: "flex",
+      flexDirection: "column",
+      borderRight: `1px solid ${theme.cardBorder}`,
+      backgroundColor: theme.surface,
+      height: "100%",
+    }}>
+
       {/* Header */}
-      <div className="space-y-3 border-b border-white/10 p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <BookOpen className="h-4 w-4 text-stealth-accent" />
-            <span className="text-xs font-semibold uppercase tracking-widest text-stealth-muted">
+      <div style={{
+        padding: "16px",
+        borderBottom: `1px solid ${theme.cardBorder}`,
+        display: "flex",
+        flexDirection: "column",
+        gap: "12px",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <BookOpen size={16} color={theme.accent} />
+            <span style={{
+              fontSize: "10px", fontFamily: "sans-serif",
+              fontWeight: 700, letterSpacing: "0.16em",
+              textTransform: "uppercase", color: theme.textMuted,
+            }}>
               Past Reflections
             </span>
           </div>
+
+          {/* New entry button */}
           <button
             type="button"
             onClick={onNew}
-            className="rounded-lg bg-stealth-accent/15 px-2.5 py-1 text-[11px] font-medium text-stealth-accent transition hover:bg-stealth-accent/25"
+            style={{
+              background: `${theme.accent}18`,
+              color: theme.accent,
+              border: `1px solid ${theme.accent}30`,
+              borderRadius: "8px",
+              padding: "4px 10px",
+              fontSize: "11px",
+              fontFamily: "sans-serif",
+              fontWeight: 600,
+              cursor: "pointer",
+              transition: "all 0.2s",
+            }}
           >
             + New
           </button>
         </div>
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-stealth-muted/50" />
+
+        {/* Search */}
+        <div style={{ position: "relative" }}>
+          <Search
+            size={13}
+            color={theme.textMuted}
+            style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}
+          />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search reflections..."
-            className="w-full rounded-lg border border-white/10 bg-stealth-card py-2 pl-9 pr-3 text-xs text-stealth-text placeholder:text-stealth-muted/40 focus:border-stealth-accent/40 focus:outline-none"
+            style={{
+              width: "100%",
+              background: theme.cardBg,
+              border: `1px solid ${theme.cardBorder}`,
+              borderRadius: "10px",
+              padding: "8px 12px 8px 34px",
+              fontSize: "12px",
+              fontFamily: "sans-serif",
+              color: theme.text,
+              outline: "none",
+              boxSizing: "border-box",
+            }}
+            onFocus={(e) => e.target.style.borderColor = theme.accent}
+            onBlur={(e)  => e.target.style.borderColor = theme.cardBorder}
           />
         </div>
       </div>
 
       {/* Entry list */}
-      <div className="flex-1 overflow-y-auto p-2">
+      <div style={{ flex: 1, overflowY: "auto", padding: "8px" }}>
         <AnimatePresence initial={false}>
           {filtered.map((entry) => (
             <motion.button
@@ -76,28 +124,48 @@ export default function JournalSidebar({
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -8 }}
               onClick={() => onSelect(entry.id)}
-              className={`mb-1 flex w-full flex-col items-start rounded-lg px-3 py-2.5 text-left transition ${
-                activeId === entry.id
-                  ? "bg-stealth-accent/10 border border-stealth-accent/20"
-                  : "hover:bg-white/5 border border-transparent"
-              }`}
+              style={{
+                width: "100%",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "flex-start",
+                padding: "10px 12px",
+                borderRadius: "10px",
+                marginBottom: "4px",
+                cursor: "pointer",
+                textAlign: "left",
+                transition: "all 0.2s",
+                background: activeId === entry.id ? `${theme.accent}12` : "transparent",
+                border: activeId === entry.id
+                  ? `1px solid ${theme.accent}30`
+                  : "1px solid transparent",
+              }}
             >
-              <div className="flex w-full items-center justify-between">
-                <span className="text-sm font-medium text-stealth-text truncate">
+              <div style={{ display: "flex", width: "100%", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{
+                  fontSize: "13px", fontFamily: "sans-serif",
+                  fontWeight: 500, color: theme.text,
+                  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                }}>
                   {entry.title || "Untitled"}
                 </span>
-                <span className="shrink-0 text-[10px] text-stealth-muted">
+                <span style={{ fontSize: "10px", fontFamily: "sans-serif", color: theme.textMuted, flexShrink: 0, marginLeft: "8px" }}>
                   {formatDate(entry.createdAt)}
                 </span>
               </div>
-              <p className="mt-0.5 w-full truncate text-xs text-stealth-muted">
+              <p style={{
+                fontSize: "11px", fontFamily: "sans-serif",
+                color: theme.textMuted, marginTop: "3px",
+                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", width: "100%",
+              }}>
                 {entry.body.slice(0, 60) || "Empty entry..."}
               </p>
             </motion.button>
           ))}
         </AnimatePresence>
+
         {filtered.length === 0 && (
-          <p className="px-3 py-6 text-center text-xs text-stealth-muted">
+          <p style={{ textAlign: "center", fontSize: "12px", fontFamily: "sans-serif", color: theme.textMuted, padding: "24px 12px" }}>
             No reflections match your search.
           </p>
         )}

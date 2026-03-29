@@ -1,78 +1,104 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { motion } from "framer-motion";
-import {
-  LayoutDashboard,
-  BookOpen,
-  PenLine,
-  Users,
-  MessageSquare,
-  User,
-} from "lucide-react";
+import { useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import { useTheme } from "@/lib/ThemeContext";
 
-const NAV_ITEMS = [
-  { href: "/dashboard", label: "Home", icon: LayoutDashboard },
-  { href: "/hub", label: "Wisdom Hub", icon: BookOpen },
-  { href: "/journal", label: "Inner Ledger", icon: PenLine },
-  { href: "/events", label: "Circles", icon: Users },
-  { href: "/chat", label: "Mentors", icon: MessageSquare },
+// Nav items and where they route to
+const navItems = [
+  { label: "Home",             path: "/dashboard" },
+  { label: "Information Hub",  path: "/hub" },
+  { label: "Inner Ledger",     path: "/journal" },
+  { label: "Circles",          path: "/events" },
+  { label: "Mentors",          path: "/chat" },
 ];
 
 export default function Navbar() {
-  const pathname = usePathname();
+  const theme    = useTheme();
+  const router   = useRouter();
+  const pathname = usePathname(); // ← tells us which page we're on
+
+  const handleQuickExit = () => {
+    localStorage.clear();
+    window.location.href = "https://www.google.com";
+  };
 
   return (
-    <nav className="fixed inset-x-0 top-0 z-50 flex h-16 items-center justify-between border-b border-slate-800 bg-slate-950/80 px-5 backdrop-blur-md">
+    <nav
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: "16px 32px",
+        borderBottom: `1px solid ${theme.cardBorder}`,
+        backgroundColor: theme.bg,
+        position: "sticky",
+        top: 0,
+        zIndex: 100,
+      }}
+    >
       {/* Logo */}
-      <Link
-        href="/dashboard"
-        className="flex items-center gap-2 text-stealth-accent"
+      <div
+        style={{
+          color: theme.accent,
+          fontSize: "13px",
+          letterSpacing: "0.2em",
+          textTransform: "uppercase",
+          fontFamily: "sans-serif",
+          cursor: "pointer",
+        }}
+        onClick={() => router.push("/dashboard")}
       >
-        <span className="text-[13px] font-semibold uppercase tracking-[0.18em]">
-          Sanctuary
-        </span>
-      </Link>
+        Sanctuary
+      </div>
 
       {/* Nav links */}
-      <div className="flex items-center gap-1">
-        {NAV_ITEMS.map((item) => {
-          const Icon = item.icon;
-          const isActive =
-            pathname === item.href || pathname.startsWith(item.href + "/");
-
+      <div style={{ display: "flex", gap: "28px" }}>
+        {navItems.map((item) => {
+          // isActive = true when current page matches this nav item
+          const isActive = pathname === item.path || pathname?.startsWith(item.path + "/");
           return (
-            <Link key={item.href} href={item.href}>
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                transition={{ type: "spring" as const, stiffness: 400, damping: 22 }}
-                className={`relative flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition ${
-                  isActive
-                    ? "text-stealth-accent"
-                    : "text-stealth-muted hover:text-stealth-text"
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-                <span className="hidden md:inline">{item.label}</span>
-
-                {isActive && (
-                  <motion.span
-                    layoutId="nav-indicator"
-                    className="absolute inset-0 -z-10 rounded-lg bg-stealth-accent/10"
-                    transition={{ type: "spring" as const, stiffness: 350, damping: 30 }}
-                  />
-                )}
-              </motion.div>
-            </Link>
+            <button
+              key={item.label}
+              onClick={() => router.push(item.path)}
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                fontSize: "13px",
+                fontFamily: "sans-serif",
+                color: isActive ? theme.accent : theme.textMuted,
+                fontWeight: isActive ? 600 : 400,
+                padding: "0 0 2px 0",
+                // Active underline
+                borderBottom: isActive
+                  ? `2px solid ${theme.accent}`
+                  : "2px solid transparent",
+                transition: "all 0.2s",
+              }}
+            >
+              {item.label}
+            </button>
           );
         })}
       </div>
 
-      {/* User avatar placeholder */}
-      <div className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-stealth-card">
-        <User className="h-4 w-4 text-stealth-muted" />
-      </div>
+      {/* Quick Exit */}
+      <button
+        onClick={handleQuickExit}
+        style={{
+          background: "#c0392b",
+          color: "white",
+          border: "none",
+          borderRadius: "20px",
+          padding: "7px 18px",
+          fontSize: "12px",
+          fontFamily: "sans-serif",
+          cursor: "pointer",
+        }}
+      >
+        Quick Exit
+      </button>
     </nav>
   );
 }
