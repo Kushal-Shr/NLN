@@ -10,8 +10,14 @@ type PeerCardProps = {
   active: boolean;
 };
 
+const STATUS_COLORS: Record<string, string> = {
+  online: "#34d399",
+  away:   "#fbbf24",
+};
+
 export default function PeerCard({ peer, active }: PeerCardProps) {
   const theme = useTheme();
+  const dotColor = STATUS_COLORS[peer.status];
 
   return (
     <Link
@@ -26,10 +32,10 @@ export default function PeerCard({ peer, active }: PeerCardProps) {
         style={{ backgroundColor: theme.surface }}
       >
         <User className="h-4 w-4" style={{ color: theme.textMuted }} />
-        {peer.online && (
+        {dotColor && (
           <span
-            className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-400"
-            style={{ border: `2px solid ${theme.bg}` }}
+            className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full"
+            style={{ backgroundColor: dotColor, border: `2px solid ${theme.bg}` }}
           />
         )}
       </div>

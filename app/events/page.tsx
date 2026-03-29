@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Compass, EyeOff } from "lucide-react";
+import { Compass, EyeOff, Video } from "lucide-react";
 import Navbar from "@/components/shared/Navbar";
 import FilterBar from "@/components/features/events/FilterBar";
 import EventCard from "@/components/features/events/EventCard";
@@ -20,6 +20,19 @@ export default function EventsPage() {
   const [anonymous, setAnonymous] = useState(false);
   const [liveEvent, setLiveEvent] = useState<CircleEvent | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+
+  const INSTANT_CIRCLE: CircleEvent = {
+    id: "instant",
+    title: "Sanctuary Open Circle",
+    host: "You",
+    hostRole: "Host",
+    category: "community-talk",
+    coverUrl: "",
+    date: "Now",
+    time: "Now",
+    isLive: true,
+    attendees: 1,
+  };
 
   const filtered = useMemo(
     () =>
@@ -84,6 +97,28 @@ export default function EventsPage() {
             where you are today.
           </p>
         </motion.header>
+
+        {/* Join Video Circle CTA */}
+        <motion.div
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.08 }}
+        >
+          <button
+            type="button"
+            onClick={() => setLiveEvent(INSTANT_CIRCLE)}
+            className="inline-flex items-center gap-2.5 rounded-xl px-6 py-3 text-sm font-medium transition"
+            style={{
+              backgroundColor: theme.btnBg,
+              color: theme.btnColor,
+              fontFamily: "sans-serif",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+            }}
+          >
+            <Video className="h-4.5 w-4.5" />
+            Join Video Circle
+          </button>
+        </motion.div>
 
         {/* Controls */}
         <motion.div

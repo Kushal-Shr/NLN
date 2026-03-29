@@ -21,6 +21,7 @@ export default function ChatConversationPage() {
       lastMessage: "",
       timestamp: "",
       online: false,
+      status: "offline" as const,
     };
   }, [id]);
 

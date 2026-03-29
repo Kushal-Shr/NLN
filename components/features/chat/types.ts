@@ -1,3 +1,5 @@
+export type PeerStatus = "online" | "away" | "offline";
+
 export type Peer = {
   id: string;
   name: string;
@@ -5,6 +7,7 @@ export type Peer = {
   lastMessage: string;
   timestamp: string;
   online: boolean;
+  status: PeerStatus;
 };
 
 export type Message = {
@@ -17,66 +20,47 @@ export type Message = {
 export const SELF_ID = "self";
 
 export const MENTOR: Peer = {
-  id: "mentor-aris",
-  name: "Guide Aris",
-  tier: "Cultural Interpreter",
-  lastMessage: "Remember, the compass always recalibrates.",
-  timestamp: "2 min ago",
+  id: "mentor-shreyas",
+  name: "Shreyas K. Shrestha",
+  tier: "Mentor",
+  lastMessage: "Namaste — how are you feeling today?",
+  timestamp: "Just now",
   online: true,
+  status: "online",
 };
 
 export const PEERS: Peer[] = [
   {
-    id: "peer-sage",
-    name: "Sage Echo",
-    lastMessage: "That breathing technique really helped.",
-    timestamp: "12 min ago",
+    id: "peer-shrijan",
+    name: "Shrijan Paudel",
+    lastMessage: "Let me know if you need anything from my side.",
+    timestamp: "5 min ago",
     online: true,
+    status: "online",
   },
   {
-    id: "peer-nova",
-    name: "Nova Light",
-    lastMessage: "I journaled about it — want to share notes?",
-    timestamp: "1 hr ago",
+    id: "peer-sashwot",
+    name: "Sashwot Amatya",
+    lastMessage: "I'll review the notes and get back to you.",
+    timestamp: "30 min ago",
     online: false,
-  },
-  {
-    id: "peer-ember",
-    name: "Ember Drift",
-    lastMessage: "Catch you in the next session.",
-    timestamp: "3 hr ago",
-    online: false,
-  },
-  {
-    id: "peer-river",
-    name: "River Stone",
-    lastMessage: "Grounding walk tomorrow morning?",
-    timestamp: "Yesterday",
-    online: false,
+    status: "away",
   },
 ];
 
 export const SEED_MESSAGES: Record<string, Message[]> = {
-  "mentor-aris": [
-    { id: "m1", senderId: "mentor-aris", content: "Welcome back to the Sanctuary. How are the waters today?", timestamp: "10:02 AM" },
-    { id: "m2", senderId: SELF_ID, content: "A little choppy, but I'm steering.", timestamp: "10:03 AM" },
-    { id: "m3", senderId: "mentor-aris", content: "That's real navigation. Remember, the compass always recalibrates.", timestamp: "10:04 AM" },
+  "mentor-shreyas": [
+    { id: "ms1", senderId: "mentor-shreyas", content: "Namaste, I am here to help you navigate your journey. How are you feeling today?", timestamp: "10:00 AM" },
+    { id: "ms2", senderId: SELF_ID, content: "I've been feeling a bit overwhelmed with everything lately.", timestamp: "10:02 AM" },
+    { id: "ms3", senderId: "mentor-shreyas", content: "That's completely natural. Sometimes the weight we carry is heavier than what others can see. Let's talk through it — one step at a time.", timestamp: "10:03 AM" },
   ],
-  "peer-sage": [
-    { id: "s1", senderId: "peer-sage", content: "Hey — tried the 4-7-8 breathing from the Hub.", timestamp: "9:45 AM" },
-    { id: "s2", senderId: SELF_ID, content: "How'd it go?", timestamp: "9:46 AM" },
-    { id: "s3", senderId: "peer-sage", content: "That breathing technique really helped.", timestamp: "9:48 AM" },
+  "peer-shrijan": [
+    { id: "sj1", senderId: "peer-shrijan", content: "Hey! I just pushed the latest changes to the Sanctuary repo. Let me know if you need anything from my side.", timestamp: "9:50 AM" },
+    { id: "sj2", senderId: SELF_ID, content: "Thanks Shrijan — I'll pull and review it.", timestamp: "9:52 AM" },
+    { id: "sj3", senderId: "peer-shrijan", content: "Sounds good. The backend API for the mentor matcher is live now too.", timestamp: "9:53 AM" },
   ],
-  "peer-nova": [
-    { id: "n1", senderId: SELF_ID, content: "I wrote about the 'foggy lens' feeling.", timestamp: "8:30 AM" },
-    { id: "n2", senderId: "peer-nova", content: "I journaled about it — want to share notes?", timestamp: "9:00 AM" },
-  ],
-  "peer-ember": [
-    { id: "e1", senderId: "peer-ember", content: "Good session today.", timestamp: "Yesterday" },
-    { id: "e2", senderId: SELF_ID, content: "Agreed. Thanks for listening.", timestamp: "Yesterday" },
-    { id: "e3", senderId: "peer-ember", content: "Catch you in the next session.", timestamp: "Yesterday" },
-  ],
-  "peer-river": [
-    { id: "r1", senderId: "peer-river", content: "Grounding walk tomorrow morning?", timestamp: "Yesterday" },
+  "peer-sashwot": [
+    { id: "sa1", senderId: SELF_ID, content: "Sashwot, can you take a look at the event cards layout?", timestamp: "9:15 AM" },
+    { id: "sa2", senderId: "peer-sashwot", content: "Sure — I'll review the notes and get back to you. Give me about an hour.", timestamp: "9:20 AM" },
   ],
 };

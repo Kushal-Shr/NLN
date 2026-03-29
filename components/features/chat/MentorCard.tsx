@@ -19,7 +19,7 @@ export default function MentorCard({ mentor, active }: MentorCardProps) {
         className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-widest"
         style={{ color: theme.accent, opacity: 0.7, fontFamily: "sans-serif" }}
       >
-        Sacred Connection
+        Your Mentor
       </p>
       <Link
         href={`/chat/${mentor.id}`}
@@ -31,10 +31,12 @@ export default function MentorCard({ mentor, active }: MentorCardProps) {
       >
         <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full" style={{ backgroundColor: `${theme.accent}15` }}>
           <Shield className="h-5 w-5" style={{ color: theme.accent }} />
-          <span
-            className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-400"
-            style={{ border: `2px solid ${theme.bg}` }}
-          />
+          {mentor.status === "online" && (
+            <span
+              className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-400"
+              style={{ border: `2px solid ${theme.bg}` }}
+            />
+          )}
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
