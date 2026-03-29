@@ -16,7 +16,7 @@ export const themes = {
     navBorder:   "#E8D9B0",
     quoteBg:     "#FFF8EC",
     quoteBorder: "#E8D9B0",
-    greeting:    "As-salamu alaykum — peace be with you.",
+    greeting:    "How are you doing today?",
     greetingSub: "This space holds whatever you bring to it today.",
     quote:       "\"Verily, with hardship comes ease.\"",
     quoteSource: "Quran 94:5 — a reminder that difficulty is always temporary",

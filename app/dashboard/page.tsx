@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import ThemesDoddles from "@/components/shared/ThemesDoddles";
 import { useTheme } from "@/lib/ThemeContext";
+import LanguageSelector from "@/components/shared/LanguageSelector";
 
 const moods = [
   { emoji: "😔", label: "Heavy" },
@@ -87,16 +88,20 @@ export default function DashboardPage() {
         </div>
 
         {/* Quick Exit — always red */}
-        <button
-          onClick={handleQuickExit}
-          style={{
-            background: "#c0392b", color: "white", border: "none",
-            borderRadius: "20px", padding: "7px 18px",
-            fontSize: "12px", fontFamily: "sans-serif", cursor: "pointer",
-          }}
-        >
-          Quick Exit
-        </button>
+      {/* Right side */}
+<div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+  <LanguageSelector />
+  <button
+    onClick={handleQuickExit}
+    style={{
+      background: "#c0392b", color: "white", border: "none",
+      borderRadius: "20px", padding: "7px 18px",
+      fontSize: "12px", fontFamily: "sans-serif", cursor: "pointer",
+    }}
+  >
+    Quick Exit
+  </button>
+</div>
       </nav>
 
       <main style={{ padding: "44px 32px", maxWidth: "880px", margin: "0 auto", position: "relative", zIndex: 1 }}>
