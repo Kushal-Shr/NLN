@@ -3,6 +3,8 @@
 import {useState, useEffect} from "react";
 import {useRouter} from "next/navigation";
 import {motion, AnimatePresence} from "framer-motion";
+import { loginAnonymously, saveUserProfile } from "@/lib/db"; //newly created from libdb
+
 
 //Gentle Onboarding - What brings you comfort?
 const comfortOptions =[
@@ -56,11 +58,21 @@ export default function OnboardingPage(){
     setTimeout(() => setStep("language"),300);
   }; 
 
-  const handleFinish = () => {
+const handleFinish = async () => {
     // Save preferences to localStorage so the home page can read them
     localStorage.setItem("sanctuary_comfort", comfort || "practical");
     localStorage.setItem("sanctuary_language", language);
     localStorage.setItem("sanctuary_mode", mode || "anonymous");
+
+    if (mode === "save") {
+      const user = await loginAnonymously();
+      await saveUserProfile(user.uid, {
+        comfort: comfort || "practical",
+        language: language,
+        background: "not set yet",
+      });
+    }
+
     
     router.push("/dashboard");
   };
