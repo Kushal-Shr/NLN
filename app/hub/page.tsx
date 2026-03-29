@@ -1,127 +1,392 @@
 "use client";
 
-import { useCallback, useState } from "react";
-import { motion } from "framer-motion";
-import { BookOpen } from "lucide-react";
-import VibeCheck, { FEELINGS } from "@/components/features/hub/VibeCheck";
-import SearchBar from "@/components/features/hub/SearchBar";
-import ResourceCards from "@/components/features/hub/ResourceCards";
-import WisdomOutput from "@/components/features/hub/WisdomOutput";
+import { useCallback, useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Search,
+  BookOpen,
+  Loader2,
+  Hash,
+} from "lucide-react";
 import PageContainer from "@/components/shared/PageContainer";
-import type { GeminiResponse } from "@/lib/gemini";
+import ResilienceCard from "@/components/features/hub/ResilienceCard";
+import ReadMoreModal from "@/components/features/hub/ReadMoreModal";
+import { db, auth } from "@/lib/db";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import type { LibraryResult, DiscoveryCard, PersonaTone } from "@/lib/types";
+
+// ── Persona-based discovery cards ───────────
+
+const ALL_DISCOVERY_CARDS: DiscoveryCard[] = [
+  { id: "mindfulness", title: "The Practice of Stillness", teaser: "Quiet the noise and discover the power hidden in a single breath.", query: "mindfulness", image: "https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=600&q=80", persona: "spiritual" },
+  { id: "gratitude", title: "Counting What Remains", teaser: "Even on the heaviest days, gratitude can shift the landscape of your inner world.", query: "gratitude", image: "https://images.unsplash.com/photo-1474540412665-1cdae210ae6b?w=600&q=80", persona: "spiritual" },
+  { id: "focus", title: "Sharpening the Inner Lens", teaser: "Your attention is currency — learn where to invest it for the highest return.", query: "focus", image: "https://images.unsplash.com/photo-1519681393784-d120267933ba?w=600&q=80", persona: "practical" },
+  { id: "time-mgmt", title: "Architecting Your Hours", teaser: "Structure is not a cage — it is the scaffold that holds your ambitions upright.", query: "time management", image: "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=600&q=80", persona: "practical" },
+  { id: "burnout", title: "Navigating Burnout", teaser: "When the flame flickers, it is not dying — it is asking to be tended differently.", query: "burnout recovery", image: "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=600&q=80", persona: "nature" },
+  { id: "seasons", title: "Trusting the Seasons", teaser: "Every storm passes. Every root deepens. Nature has already written your resilience story.", query: "emotional resilience", image: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=600&q=80", persona: "nature" },
+  { id: "connection", title: "Rebuilding the Circle", teaser: "One genuine connection can shift the entire landscape of your inner world.", query: "connection", image: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=600&q=80", persona: "community" },
+  { id: "belonging", title: "The Fireside Within", teaser: "Belonging is not found — it is built, one honest conversation at a time.", query: "sense of belonging", image: "https://images.unsplash.com/photo-1511632765486-a01980e01a18?w=600&q=80", persona: "community" },
+  { id: "rest", title: "The Art of Sacred Rest", teaser: "Rest is not laziness — it is the root system that feeds every branch of your life.", query: "rest", image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&q=80", persona: "all" },
+  { id: "patience", title: "The Strength of Patience", teaser: "Patience is not passive waiting — it is the quiet confidence that the seed will sprout.", query: "patience and resilience", image: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=600&q=80", persona: "all" },
+  { id: "self-worth", title: "Reclaiming Your Worth", teaser: "You are not what the world says you are. You are what you choose to become.", query: "self worth and confidence", image: "https://images.unsplash.com/photo-1504805572947-34fad45aed93?w=600&q=80", persona: "all" },
+  { id: "grounding", title: "Roots in the Storm", teaser: "When everything shakes, go lower. Touch the ground. Remember what holds you.", query: "grounding techniques", image: "https://images.unsplash.com/photo-1448375240586-882707db888b?w=600&q=80", persona: "all" },
+];
+
+const TRENDING = [
+  { label: "Focus", query: "focus" },
+  { label: "Rest", query: "rest" },
+  { label: "Connection", query: "connection" },
+  { label: "Grounding", query: "grounding techniques" },
+  { label: "Family Pressure", query: "family pressure" },
+  { label: "Inner Peace", query: "inner peace" },
+  { label: "Burnout", query: "burnout recovery" },
+  { label: "Self-Worth", query: "self worth and confidence" },
+];
+
+function getPersona(): PersonaTone | null {
+  if (typeof window === "undefined") return null;
+  const stored = localStorage.getItem("sanctuary_comfort");
+  if (stored && ["spiritual", "nature", "practical", "community"].includes(stored)) {
+    return stored as PersonaTone;
+  }
+  return null;
+}
+
+function getDiscoveryFeed(persona: PersonaTone | null): DiscoveryCard[] {
+  if (!persona) return ALL_DISCOVERY_CARDS;
+  return ALL_DISCOVERY_CARDS.filter(
+    (c) => c.persona === persona || c.persona === "all"
+  );
+}
 
 export default function HubPage() {
-  const [selectedFeelings, setSelectedFeelings] = useState<string[]>([]);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<GeminiResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const toggleFeeling = useCallback((id: string) => {
-    setSelectedFeelings((prev) =>
-      prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id]
-    );
+  const [persona, setPersona] = useState<PersonaTone | null>(null);
+  const [discoveryCards, setDiscoveryCards] = useState<DiscoveryCard[]>(ALL_DISCOVERY_CARDS);
+
+  const [searchResults, setSearchResults] = useState<Map<string, LibraryResult>>(new Map());
+  const [searchCards, setSearchCards] = useState<DiscoveryCard[]>([]);
+  const [isSearchMode, setIsSearchMode] = useState(false);
+
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalResult, setModalResult] = useState<LibraryResult | null>(null);
+  const [activeQuery, setActiveQuery] = useState("");
+  const [bookmarked, setBookmarked] = useState(false);
+  const [bookmarking, setBookmarking] = useState(false);
+
+  useEffect(() => {
+    const p = getPersona();
+    setPersona(p);
+    setDiscoveryCards(getDiscoveryFeed(p));
   }, []);
 
-  const generateWisdom = useCallback(async () => {
-    if (selectedFeelings.length === 0 && !query.trim()) {
-      setError("Select a vibe or type a search to begin.");
-      return;
-    }
-
-    setError(null);
-    setLoading(true);
-
-    try {
-      const feelingLabels = selectedFeelings.map(
-        (id) => FEELINGS.find((f) => f.id === id)?.label ?? id
-      );
-
-      const res = await fetch("/api/hub-generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ feelings: feelingLabels, query }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Something went wrong.");
+  const searchLibrary = useCallback(
+    async (searchQuery?: string) => {
+      const q = (searchQuery ?? query).trim();
+      if (!q) {
+        setError("Type a topic to search the library.");
+        return;
       }
 
-      const data: GeminiResponse = await res.json();
-      setResult(data);
+      setError(null);
+      setLoading(true);
+      setIsSearchMode(true);
+      setBookmarked(false);
+
+      try {
+        const res = await fetch("/api/ai/library", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: q }),
+        });
+
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.error || "Something went wrong.");
+        }
+
+        const data = await res.json();
+        const result = data.data as LibraryResult;
+
+        const card: DiscoveryCard = {
+          id: `search-${Date.now()}`,
+          title: result.title,
+          teaser: result.description.split("\n")[0]?.slice(0, 140) || q,
+          query: q,
+          image: `https://images.unsplash.com/photo-1519681393784-d120267933ba?w=600&q=80`,
+          persona: "all",
+        };
+
+        setSearchCards([card]);
+        setSearchResults(new Map([[card.id, result]]));
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Failed to search the library."
+        );
+      } finally {
+        setLoading(false);
+      }
+    },
+    [query]
+  );
+
+  const handleCardClick = useCallback(
+    async (card: DiscoveryCard) => {
+      const existing = searchResults.get(card.id);
+      if (existing) {
+        setModalResult(existing);
+        setActiveQuery(card.query);
+        setBookmarked(false);
+        setModalOpen(true);
+        return;
+      }
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        const res = await fetch("/api/ai/library", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: card.query }),
+        });
+
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.error || "Something went wrong.");
+        }
+
+        const data = await res.json();
+        const result = data.data as LibraryResult;
+
+        setSearchResults((prev) => new Map(prev).set(card.id, result));
+        setModalResult(result);
+        setActiveQuery(card.query);
+        setBookmarked(false);
+        setModalOpen(true);
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Failed to load this entry."
+        );
+      } finally {
+        setLoading(false);
+      }
+    },
+    [searchResults]
+  );
+
+  const handleBookmark = useCallback(async () => {
+    if (!modalResult || bookmarked || bookmarking) return;
+    setBookmarking(true);
+
+    try {
+      const user = auth.currentUser;
+      if (!user) {
+        setBookmarking(false);
+        return;
+      }
+
+      await addDoc(collection(db, "users", user.uid, "saved_resources"), {
+        query: activeQuery,
+        result: modalResult,
+        savedAt: serverTimestamp(),
+      });
+
+      setBookmarked(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to generate wisdom.");
+      console.error("Bookmark failed:", err);
     } finally {
-      setLoading(false);
+      setBookmarking(false);
     }
-  }, [selectedFeelings, query]);
+  }, [modalResult, activeQuery, bookmarked, bookmarking]);
+
+  const handleTrending = useCallback(
+    (trendQuery: string) => {
+      setQuery(trendQuery);
+      searchLibrary(trendQuery);
+    },
+    [searchLibrary]
+  );
+
+  const clearSearch = useCallback(() => {
+    setIsSearchMode(false);
+    setSearchCards([]);
+    setQuery("");
+    setError(null);
+  }, []);
+
+  const displayCards = isSearchMode ? searchCards : discoveryCards;
 
   return (
     <PageContainer>
-    <main className="space-y-10">
-      {/* Header */}
-      <motion.header
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="space-y-1"
-      >
-        <div className="flex items-center gap-2.5">
-          <BookOpen className="h-6 w-6 text-stealth-accent" />
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-stealth-muted">
-            Wisdom Library
-          </p>
-        </div>
-        <h1 className="text-3xl font-semibold text-stealth-text">
-          Information Hub
-        </h1>
-        <p className="max-w-xl text-sm text-stealth-muted">
-          A quiet space to check in, explore resilience techniques, and receive
-          personalised insight — no clinical labels, just clarity.
-        </p>
-      </motion.header>
-
-      {/* Search & Generate */}
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.15 }}
-      >
-        <SearchBar
-          query={query}
-          onChange={setQuery}
-          onSearch={generateWisdom}
-          loading={loading}
-        />
-      </motion.div>
-
-      {/* Vibe Check */}
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.25 }}
-      >
-        <VibeCheck selected={selectedFeelings} onToggle={toggleFeeling} />
-      </motion.div>
-
-      {/* Error */}
-      {error && (
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-sm text-red-400"
+      <main className="space-y-8">
+        {/* Header */}
+        <motion.header
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="space-y-1"
         >
-          {error}
-        </motion.p>
-      )}
+          <div className="flex items-center gap-2.5">
+            <BookOpen className="h-6 w-6 text-stealth-accent" />
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-stealth-muted">
+              Wisdom Library
+            </p>
+          </div>
+          <h1 className="text-3xl font-semibold text-stealth-text">
+            Resilience Gallery
+          </h1>
+          <p className="max-w-xl text-sm text-stealth-muted">
+            {persona
+              ? `Curated for your ${persona} path — explore topics that resonate with your journey.`
+              : "Explore research-backed wisdom, practical guidance, and trusted sources — all in one place."}
+          </p>
+        </motion.header>
 
-      {/* Wisdom Loading / Metaphor */}
-      <WisdomOutput metaphor={result?.metaphor ?? null} loading={loading} />
+        {/* Search bar */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="flex items-center gap-3"
+        >
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-stealth-muted" />
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") searchLibrary();
+              }}
+              placeholder="Search for focus, rest, grounding, connection..."
+              className="w-full rounded-xl border border-white/10 bg-stealth-card py-3.5 pl-11 pr-4 text-sm text-stealth-text placeholder:text-stealth-muted/50 transition focus:border-stealth-accent/50 focus:outline-none focus:ring-1 focus:ring-stealth-accent/30"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => searchLibrary()}
+            disabled={loading}
+            className="shrink-0 rounded-xl bg-stealth-accent px-6 py-3.5 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-50"
+          >
+            {loading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              "Search"
+            )}
+          </button>
+        </motion.div>
 
-      {/* Resource Cards */}
-      <ResourceCards data={result} />
-    </main>
+        {/* Trending + back to discovery */}
+        <motion.div
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="flex flex-wrap items-center gap-2"
+        >
+          {isSearchMode && (
+            <button
+              type="button"
+              onClick={clearSearch}
+              className="rounded-full border border-stealth-accent/30 bg-stealth-accent/10 px-3.5 py-1.5 text-xs font-medium text-stealth-accent transition hover:bg-stealth-accent/20"
+            >
+              &larr; Back to Discovery
+            </button>
+          )}
+          {!isSearchMode && (
+            <>
+              <p className="mr-1 text-[11px] font-semibold uppercase tracking-widest text-stealth-muted/60">
+                Trending
+              </p>
+              {TRENDING.map((t) => (
+                <button
+                  key={t.query}
+                  type="button"
+                  onClick={() => handleTrending(t.query)}
+                  className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.03] px-3.5 py-1.5 text-xs font-medium text-stealth-muted transition hover:border-stealth-accent/30 hover:bg-stealth-accent/5 hover:text-stealth-accent"
+                >
+                  <Hash className="h-3 w-3" />
+                  {t.label}
+                </button>
+              ))}
+            </>
+          )}
+        </motion.div>
+
+        {/* Error */}
+        {error && (
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-sm text-red-400"
+          >
+            {error}
+          </motion.p>
+        )}
+
+        {/* Loading */}
+        {loading && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex items-center justify-center gap-3 rounded-xl border border-stealth-accent/20 bg-stealth-accent/5 py-16"
+          >
+            <Loader2 className="h-5 w-5 animate-spin text-stealth-accent" />
+            <span className="text-sm text-stealth-muted">
+              The Library is assembling your wisdom...
+            </span>
+          </motion.div>
+        )}
+
+        {/* Masonry Gallery */}
+        {!loading && displayCards.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.15 }}
+            className="columns-1 gap-4 md:columns-2 lg:columns-3"
+          >
+            <AnimatePresence mode="popLayout">
+              {displayCards.map((card, i) => (
+                <ResilienceCard
+                  key={card.id}
+                  card={card}
+                  result={searchResults.get(card.id)}
+                  index={i}
+                  onCardClick={handleCardClick}
+                />
+              ))}
+            </AnimatePresence>
+          </motion.div>
+        )}
+
+        {/* Empty search state */}
+        {!loading && isSearchMode && searchCards.length === 0 && !error && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex flex-col items-center justify-center gap-2 py-16 text-center"
+          >
+            <Search className="h-8 w-8 text-stealth-muted/30" />
+            <p className="text-sm text-stealth-muted">
+              No results yet — try searching for a topic above.
+            </p>
+          </motion.div>
+        )}
+      </main>
+
+      {/* Read More Modal */}
+      <ReadMoreModal
+        open={modalOpen}
+        result={modalResult}
+        bookmarked={bookmarked}
+        bookmarking={bookmarking}
+        onClose={() => setModalOpen(false)}
+        onBookmark={handleBookmark}
+      />
     </PageContainer>
   );
 }

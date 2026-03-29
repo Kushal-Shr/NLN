@@ -111,6 +111,75 @@ export interface CircleScheduleEntry {
   recurring: boolean;
 }
 
+// ── AI Reframing ────────────────────────────
+
+export type PersonaTone = "spiritual" | "nature" | "practical" | "community";
+
+export interface ReframePayload {
+  rawInput: string;
+  persona: PersonaTone;
+  userId?: string;
+}
+
+export interface ReframeResult {
+  insight: string;
+  practice: string;
+  metaphor: string;
+}
+
+// ── AI Mentor Matching ──────────────────────
+
+export interface MatchPayload {
+  userInput: string;
+  userId?: string;
+}
+
+export interface MatchResult {
+  recommendedTier: MentorTier;
+  matchCertainty: number;
+  culturallySpecificReason: string;
+}
+
+// ── Resilience Timeline (Firestore) ─────────
+
+export interface InsightRecord {
+  type: "reframe" | "match";
+  input: string;
+  result: ReframeResult | MatchResult;
+  createdAt: string;
+}
+
+// ── AI Library ──────────────────────────────
+
+export interface LibraryCitation {
+  sourceName: string;
+  url: string;
+}
+
+export interface LibraryResult {
+  title: string;
+  description: string;
+  guidance: string[];
+  citations: LibraryCitation[];
+}
+
+export interface SavedResource {
+  query: string;
+  result: LibraryResult;
+  savedAt: string;
+}
+
+// ── Discovery Card (Hub Feed) ──────────────
+
+export interface DiscoveryCard {
+  id: string;
+  title: string;
+  teaser: string;
+  query: string;
+  image: string;
+  persona: PersonaTone | "all";
+}
+
 // ── API Response Envelope ───────────────────
 
 export interface ApiSuccess<T> {
