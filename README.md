@@ -2,6 +2,25 @@
 
 > Your space to breathe, reflect, and heal.
 
+---
+
+## Contributors
+
+<div align="center">
+
+| | Name | Role |
+|---|---|---|
+| 👤 | **Arjit Karki** | Contributor |
+| 👤 | **Diya Basnet** | Contributor |
+| 👤 | **Kushal Shrestha** | Contributor |
+| 👤 | **Shrijan Paudel** | Contributor |
+
+*Built together with care. ✦*
+
+</div>
+
+---
+
 Sanctuary is a stealth mental health platform built for everyone — where privacy is not a feature but a foundation, and support feels human, not clinical.
 
 It doesn't look like a health app. It doesn't feel like a health app. It feels like a wisdom library, a circle of trusted guides, and a private journal you fully own.
