@@ -1,10 +1,5 @@
 "use client";
 
-// ============================================================
-// components/features/journal/EnergyTracker.tsx
-// Slider showing inner energy level — Depleted to Radiant
-// ============================================================
-
 import { Zap } from "lucide-react";
 import { useTheme } from "@/lib/ThemeContext";
 

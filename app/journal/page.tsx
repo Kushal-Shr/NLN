@@ -8,7 +8,7 @@ import EntryEditor from "@/components/features/journal/EntryEditor";
 import { SEED_ENTRIES } from "@/components/features/journal/types";
 import type { JournalEntry } from "@/components/features/journal/types";
 import type { JournalSpark } from "@/lib/gemini";
-import NavBar from "@/components/shared/NavBar";
+import Navbar from "@/components/shared/Navbar";
 import ThemeDoodles from "@/components/shared/ThemesDoddles";
 import { useTheme } from "@/lib/ThemeContext";
 
@@ -70,7 +70,7 @@ export default function JournalPage() {
 
       {/* Navbar */}
       <div style={{ position: "relative", zIndex: 10 }}>
-        <NavBar />
+        <Navbar />
       </div>
 
       {/* Mobile toggle button */}

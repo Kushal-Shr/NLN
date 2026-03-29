@@ -1,10 +1,5 @@
 "use client";
 
-// ============================================================
-// components/features/journal/EntryEditor.tsx
-// Main writing area — title, body, energy, auto-nuke, wisdom
-// ============================================================
-
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { PenLine, ShieldCheck, Timer, Loader2 } from "lucide-react";

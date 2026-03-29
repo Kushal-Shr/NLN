@@ -1,28 +1,31 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Compass, EyeOff } from "lucide-react";
-import PageContainer from "@/components/shared/PageContainer";
 import FilterBar from "@/components/features/events/FilterBar";
 import EventCard from "@/components/features/events/EventCard";
 import VideoOverlay from "@/components/features/events/VideoOverlay";
 import Toast from "@/components/features/events/Toast";
 import { SEED_EVENTS } from "@/components/features/events/types";
 import type { EventCategory, CircleEvent } from "@/components/features/events/types";
+import Navbar from "@/components/shared/Navbar";
+import ThemeDoodles from "@/components/shared/ThemesDoddles";
+import { useTheme } from "@/lib/ThemeContext";
 
 export default function EventsPage() {
-  const [filter, setFilter] = useState<EventCategory | "all">("all");
+  const theme = useTheme();
+  const [filter,     setFilter]     = useState<EventCategory | "all">("all");
   const [registered, setRegistered] = useState<Set<string>>(new Set());
-  const [anonymous, setAnonymous] = useState(false);
-  const [liveEvent, setLiveEvent] = useState<CircleEvent | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
+  const [anonymous,  setAnonymous]  = useState(false);
+  const [liveEvent,  setLiveEvent]  = useState<CircleEvent | null>(null);
+  const [toast,      setToast]      = useState<string | null>(null);
+  const [mounted,    setMounted]    = useState(false);
+
+  
 
   const filtered = useMemo(
-    () =>
-      filter === "all"
-        ? SEED_EVENTS
-        : SEED_EVENTS.filter((e) => e.category === filter),
+    () => filter === "all" ? SEED_EVENTS : SEED_EVENTS.filter((e) => e.category === filter),
     [filter]
   );
 
@@ -31,73 +34,84 @@ export default function EventsPage() {
     setTimeout(() => setToast(null), 3000);
   }, []);
 
-  const handleJoin = useCallback(
-    (event: CircleEvent) => {
-      if (event.isLive) {
-        setLiveEvent(event);
-      } else {
-        setRegistered((prev) => new Set(prev).add(event.id));
-        showToast(`Reminder set for "${event.title}"`);
-      }
-    },
-    [showToast]
-  );
+  const handleJoin = useCallback((event: CircleEvent) => {
+    if (event.isLive) {
+      setLiveEvent(event);
+    } else {
+      setRegistered((prev) => new Set(prev).add(event.id));
+      showToast(`Reminder set for "${event.title}"`);
+    }
+  }, [showToast]);
 
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return null;
+  
   return (
     <>
-      <PageContainer>
-        <main className="space-y-8">
-          {/* Header */}
+      <div style={{ minHeight: "100vh", backgroundColor: theme.bg, color: theme.text, fontFamily: "'Georgia', serif", position: "relative" }}>
+        <ThemeDoodles />
+
+        <div style={{ position: "relative", zIndex: 10 }}>
+          <Navbar />
+        </div>
+
+        <main style={{ maxWidth: "1000px", margin: "0 auto", padding: "48px 32px", position: "relative", zIndex: 1 }}>
+
+          {/* HEADER */}
           <motion.header
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="space-y-1"
+            style={{ marginBottom: "36px" }}
           >
-            <div className="flex items-center gap-2.5">
-              <Compass className="h-6 w-6 text-stealth-accent" />
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-stealth-muted">
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
+              <Compass style={{ width: "20px", height: "20px", color: theme.accent }} />
+              <p style={{ fontSize: "11px", fontFamily: "sans-serif", letterSpacing: "0.2em", textTransform: "uppercase", color: theme.textMuted }}>
                 Community Circles
               </p>
             </div>
-            <h1 className="text-3xl font-semibold text-stealth-text">
+            <h1 style={{ fontSize: "30px", fontWeight: "normal", color: theme.text, marginBottom: "10px", lineHeight: 1.2 }}>
               Coming Together
             </h1>
-            <p className="max-w-xl text-sm text-stealth-muted">
-              Safe spaces for shared healing — join a circle that speaks to
-              where you are today.
+            <p style={{ fontSize: "14px", fontFamily: "sans-serif", color: theme.textMuted, lineHeight: 1.7, maxWidth: "520px" }}>
+              Safe spaces for shared healing — join a circle that speaks to where you are today.
             </p>
           </motion.header>
 
-          {/* Controls */}
+          {/* CONTROLS */}
           <motion.div
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="flex flex-wrap items-center justify-between gap-4"
+            style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "16px", marginBottom: "32px" }}
           >
             <FilterBar active={filter} onChange={setFilter} />
 
+            {/* Anonymous toggle */}
             <button
               type="button"
               onClick={() => setAnonymous((v) => !v)}
-              className={`inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-medium transition ${
-                anonymous
-                  ? "border-amber-500/30 bg-amber-500/10 text-amber-400"
-                  : "border-white/10 text-stealth-muted hover:bg-white/5"
-              }`}
+              style={{
+                display: "inline-flex", alignItems: "center", gap: "8px",
+                borderRadius: "20px", padding: "6px 16px",
+                fontSize: "12px", fontFamily: "sans-serif", fontWeight: 500,
+                cursor: "pointer", transition: "all 0.2s",
+                background: anonymous ? `${theme.accent}15` : "transparent",
+                border: anonymous ? `1px solid ${theme.accent}40` : `1px solid ${theme.cardBorder}`,
+                color: anonymous ? theme.accent : theme.textMuted,
+              }}
             >
-              <EyeOff className="h-3.5 w-3.5" />
+              <EyeOff style={{ width: "13px", height: "13px" }} />
               Join Anonymously
             </button>
           </motion.div>
 
-          {/* Grid */}
+          {/* EVENT GRID */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
-            className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3"
+            style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "20px" }}
           >
             {filtered.map((event) => (
               <EventCard
@@ -110,21 +124,15 @@ export default function EventsPage() {
           </motion.div>
 
           {filtered.length === 0 && (
-            <p className="py-12 text-center text-sm text-stealth-muted">
+            <p style={{ textAlign: "center", fontSize: "13px", fontFamily: "sans-serif", color: theme.textMuted, padding: "48px 0" }}>
               No circles match this filter right now.
             </p>
           )}
+
         </main>
-      </PageContainer>
+      </div>
 
-      {/* Video overlay */}
-      <VideoOverlay
-        event={liveEvent}
-        anonymous={anonymous}
-        onEnd={() => setLiveEvent(null)}
-      />
-
-      {/* Toast */}
+      <VideoOverlay event={liveEvent} anonymous={anonymous} onEnd={() => setLiveEvent(null)} />
       <Toast message={toast} />
     </>
   );

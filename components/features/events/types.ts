@@ -17,14 +17,11 @@ export type CircleEvent = {
   attendees: number;
 };
 
-export const CATEGORY_META: Record<
-  EventCategory,
-  { label: string; color: string }
-> = {
-  mindfulness: { label: "Mindfulness", color: "text-violet-400" },
-  "expert-wisdom": { label: "Expert Wisdom", color: "text-amber-400" },
-  "physical-flow": { label: "Physical Flow", color: "text-emerald-400" },
-  "community-talk": { label: "Community Talk", color: "text-sky-400" },
+export const CATEGORY_META: Record<EventCategory, { label: string; color: string; hexColor: string }> = {
+  mindfulness:      { label: "Mindfulness",    color: "text-violet-400", hexColor: "#a78bfa" },
+  "expert-wisdom":  { label: "Expert Wisdom",  color: "text-amber-400",  hexColor: "#fbbf24" },
+  "physical-flow":  { label: "Physical Flow",  color: "text-emerald-400",hexColor: "#34d399" },
+  "community-talk": { label: "Community Talk", color: "text-sky-400",    hexColor: "#38bdf8" },
 };
 
 export const SEED_EVENTS: CircleEvent[] = [

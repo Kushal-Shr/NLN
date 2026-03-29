@@ -5,6 +5,7 @@ import { Calendar, Clock, Users } from "lucide-react";
 import Image from "next/image";
 import { CATEGORY_META } from "./types";
 import type { CircleEvent } from "./types";
+import { useTheme } from "@/lib/ThemeContext";
 
 type EventCardProps = {
   event: CircleEvent;
@@ -12,88 +13,106 @@ type EventCardProps = {
   onJoin: (event: CircleEvent) => void;
 };
 
-export default function EventCard({
-  event,
-  registered,
-  onJoin,
-}: EventCardProps) {
-  const meta = CATEGORY_META[event.category];
+export default function EventCard({ event, registered, onJoin }: EventCardProps) {
+  const theme = useTheme();
+  const meta  = CATEGORY_META[event.category];
 
   return (
     <motion.div
       whileHover={{ y: -4, scale: 1.01 }}
       transition={{ type: "spring" as const, stiffness: 300, damping: 22 }}
-      className="group flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-stealth-card"
+      style={{
+        display: "flex", flexDirection: "column",
+        overflow: "hidden", borderRadius: "16px",
+        border: `1px solid ${theme.cardBorder}`,
+        background: theme.cardBg,
+      }}
     >
       {/* Cover image */}
-      <div className="relative h-44 w-full overflow-hidden">
+      <div style={{ position: "relative", height: "176px", width: "100%", overflow: "hidden" }}>
         <Image
           src={event.coverUrl}
           alt={event.title}
           fill
-          className="object-cover transition-transform duration-500 group-hover:scale-105"
+          style={{ objectFit: "cover", transition: "transform 0.5s" }}
           sizes="(max-width: 768px) 100vw, 400px"
           unoptimized
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-stealth-bg/80 to-transparent" />
+        {/* Dark gradient overlay */}
+        <div style={{ position: "absolute", inset: 0, background: `linear-gradient(to top, ${theme.bg}cc, transparent)` }} />
 
         {/* Live badge */}
         {event.isLive && (
-          <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-red-600/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
+          <span style={{
+            position: "absolute", left: "12px", top: "12px",
+            display: "inline-flex", alignItems: "center", gap: "6px",
+            background: "rgba(192,57,43,0.9)", borderRadius: "20px",
+            padding: "4px 10px", fontSize: "10px", fontFamily: "sans-serif",
+            fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "white",
+          }}>
+            <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "white", animation: "pulse 1s infinite" }} />
             Live Now
           </span>
         )}
 
         {/* Category badge */}
-        <span
-          className={`absolute right-3 top-3 rounded-full bg-black/50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider backdrop-blur-sm ${meta.color}`}
-        >
+        <span style={{
+          position: "absolute", right: "12px", top: "12px",
+          background: "rgba(0,0,0,0.5)", borderRadius: "20px",
+          padding: "4px 10px", fontSize: "10px", fontFamily: "sans-serif",
+          fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase",
+          color: meta.hexColor,
+          backdropFilter: "blur(4px)",
+        }}>
           {meta.label}
         </span>
       </div>
 
       {/* Body */}
-      <div className="flex flex-1 flex-col gap-3 p-4">
-        <h3 className="text-sm font-semibold leading-snug text-stealth-text line-clamp-2">
+      <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "16px", flex: 1 }}>
+        <h3 style={{ fontSize: "14px", fontFamily: "sans-serif", fontWeight: 600, color: theme.text, lineHeight: 1.4, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
           {event.title}
         </h3>
 
-        <p className="text-xs text-stealth-muted">
+        <p style={{ fontSize: "12px", fontFamily: "sans-serif", color: theme.textMuted }}>
           {event.host}{" "}
-          <span className="text-stealth-muted/50">· {event.hostRole}</span>
+          <span style={{ opacity: 0.5 }}>· {event.hostRole}</span>
         </p>
 
-        <div className="flex items-center gap-4 text-[11px] text-stealth-muted">
-          <span className="inline-flex items-center gap-1">
-            <Calendar className="h-3 w-3" />
-            {event.date}
+        <div style={{ display: "flex", alignItems: "center", gap: "14px", fontSize: "11px", fontFamily: "sans-serif", color: theme.textMuted }}>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+            <Calendar style={{ width: "12px", height: "12px" }} /> {event.date}
           </span>
-          <span className="inline-flex items-center gap-1">
-            <Clock className="h-3 w-3" />
-            {event.time}
+          <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+            <Clock style={{ width: "12px", height: "12px" }} /> {event.time}
           </span>
-          <span className="inline-flex items-center gap-1">
-            <Users className="h-3 w-3" />
-            {event.attendees}
+          <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+            <Users style={{ width: "12px", height: "12px" }} /> {event.attendees}
           </span>
         </div>
 
         {/* Action button */}
-        <div className="mt-auto pt-1">
+        <div style={{ marginTop: "auto", paddingTop: "4px" }}>
           {registered ? (
-            <span className="inline-flex w-full items-center justify-center rounded-xl border border-stealth-accent/30 bg-stealth-accent/10 py-2 text-xs font-medium text-stealth-accent">
+            <span style={{
+              display: "flex", width: "100%", alignItems: "center", justifyContent: "center",
+              borderRadius: "12px", border: `1px solid ${theme.accent}40`,
+              background: `${theme.accent}12`, padding: "8px",
+              fontSize: "12px", fontFamily: "sans-serif", fontWeight: 500, color: theme.accent,
+            }}>
               Registered
             </span>
           ) : (
             <button
               type="button"
               onClick={() => onJoin(event)}
-              className={`w-full rounded-xl py-2 text-xs font-semibold transition ${
-                event.isLive
-                  ? "bg-red-600 text-white hover:bg-red-500"
-                  : "bg-stealth-accent text-white hover:opacity-90"
-              }`}
+              style={{
+                width: "100%", borderRadius: "12px", padding: "9px",
+                fontSize: "12px", fontFamily: "sans-serif", fontWeight: 600,
+                border: "none", cursor: "pointer", transition: "all 0.2s",
+                background: event.isLive ? "#c0392b" : theme.accent,
+                color: event.isLive ? "white" : theme.bg,
+              }}
             >
               {event.isLive ? "Join Circle — Live" : "Join Circle"}
             </button>

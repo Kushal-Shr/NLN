@@ -1,10 +1,5 @@
 "use client";
 
-// ============================================================
-// components/features/journal/JournalSidebar.tsx
-// Left sidebar — entry list, search, new entry button
-// ============================================================
-
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, BookOpen } from "lucide-react";
