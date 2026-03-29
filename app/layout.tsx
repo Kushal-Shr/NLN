@@ -1,24 +1,27 @@
-import type { Metadata } from "next";
-import NavbarWrapper from "@/components/shared/NavbarWrapper";
-import QuickExit from "@/components/shared/QuickExit";
-import "./globals.css";
+"use client";
 
-export const metadata: Metadata = {
-  title: "Sanctuary",
-  description: "Resilience through Cultural Wisdom",
-};
+import { useEffect } from "react";
+import { loginAnonymously } from "@/lib/db";
+import { ThemeProvider } from "@/lib/ThemeContext";
+import { seedDatabase } from "@/lib/seedDatabase";
+import "./globals.css";
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
+  useEffect(() => {
+    loginAnonymously().catch(console.error);
+    seedDatabase().catch(console.error);
+  }, []);
+
   return (
     <html lang="en">
-      <body className="text-stealth-text antialiased">
-        <NavbarWrapper />
-        <div id="app-content">{children}</div>
-        <QuickExit />
+      <body>
+        <ThemeProvider>
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -8,6 +8,7 @@ import {
   Bookmark,
   BookmarkCheck,
 } from "lucide-react";
+import { useTheme } from "@/lib/ThemeContext";
 import type { LibraryResult } from "@/lib/types";
 
 interface ReadMoreModalProps {
@@ -27,6 +28,8 @@ export default function ReadMoreModal({
   onClose,
   onBookmark,
 }: ReadMoreModalProps) {
+  const theme = useTheme();
+
   if (!result) return null;
 
   return (
@@ -39,7 +42,7 @@ export default function ReadMoreModal({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm"
+            className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm"
           />
 
           <motion.div
@@ -48,15 +51,28 @@ export default function ReadMoreModal({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.97 }}
             transition={{ type: "spring" as const, stiffness: 350, damping: 30 }}
-            className="fixed inset-x-4 top-[5vh] bottom-[5vh] z-50 mx-auto flex max-w-2xl flex-col overflow-hidden rounded-2xl border border-white/10 bg-slate-900 shadow-2xl md:inset-x-auto"
+            className="fixed inset-x-4 top-[5vh] bottom-[5vh] z-50 mx-auto flex max-w-2xl flex-col overflow-hidden rounded-2xl shadow-xl md:inset-x-auto"
+            style={{
+              backgroundColor: theme.cardBg,
+              border: `1px solid ${theme.cardBorder}`,
+            }}
           >
             {/* Header */}
-            <div className="flex items-start justify-between gap-4 border-b border-white/10 p-6">
+            <div
+              className="flex items-start justify-between gap-4 p-6"
+              style={{ borderBottom: `1px solid ${theme.cardBorder}` }}
+            >
               <div className="min-w-0 flex-1">
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-stealth-accent">
+                <p
+                  className="text-[10px] font-semibold uppercase tracking-widest"
+                  style={{ color: theme.accent }}
+                >
                   Library Entry
                 </p>
-                <h2 className="mt-1 text-xl font-semibold leading-tight text-white">
+                <h2
+                  className="mt-1 text-xl font-semibold leading-tight"
+                  style={{ color: theme.text }}
+                >
                   {result.title}
                 </h2>
               </div>
@@ -65,11 +81,12 @@ export default function ReadMoreModal({
                   type="button"
                   onClick={onBookmark}
                   disabled={bookmarked || bookmarking}
-                  className={`rounded-lg border p-2 transition ${
-                    bookmarked
-                      ? "border-amber-500/30 bg-amber-500/10 text-amber-400"
-                      : "border-white/10 text-stealth-muted hover:border-amber-500/30 hover:text-amber-400"
-                  }`}
+                  className="rounded-lg p-2 transition"
+                  style={{
+                    border: `1px solid ${bookmarked ? theme.accent : theme.cardBorder}`,
+                    backgroundColor: bookmarked ? `${theme.accent}15` : "transparent",
+                    color: bookmarked ? theme.accent : theme.textMuted,
+                  }}
                   aria-label={bookmarked ? "Bookmarked" : "Bookmark"}
                 >
                   {bookmarked ? (
@@ -81,7 +98,11 @@ export default function ReadMoreModal({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="rounded-lg border border-white/10 p-2 text-stealth-muted transition hover:text-white"
+                  className="rounded-lg p-2 transition"
+                  style={{
+                    border: `1px solid ${theme.cardBorder}`,
+                    color: theme.textMuted,
+                  }}
                   aria-label="Close"
                 >
                   <X className="h-4 w-4" />
@@ -92,7 +113,7 @@ export default function ReadMoreModal({
             {/* Scrollable content */}
             <div className="flex-1 overflow-y-auto p-6 space-y-8">
               {/* Description */}
-              <div className="space-y-3 text-sm leading-relaxed text-slate-300">
+              <div className="space-y-3 text-sm leading-relaxed" style={{ color: theme.text, opacity: 0.85 }}>
                 {result.description.split("\n").map((p, i) => (
                   <p key={i}>{p}</p>
                 ))}
@@ -100,16 +121,25 @@ export default function ReadMoreModal({
 
               {/* Guidance */}
               <div>
-                <h3 className="mb-4 text-xs font-semibold uppercase tracking-widest text-stealth-muted">
+                <h3
+                  className="mb-4 text-xs font-semibold uppercase tracking-widest"
+                  style={{ color: theme.textMuted }}
+                >
                   Actionable Steps
                 </h3>
                 <div className="space-y-3">
                   {result.guidance.map((step, i) => (
                     <div key={i} className="flex gap-3">
-                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-stealth-accent/15 text-[10px] font-bold text-stealth-accent">
+                      <span
+                        className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold"
+                        style={{
+                          backgroundColor: `${theme.accent}18`,
+                          color: theme.accent,
+                        }}
+                      >
                         {i + 1}
                       </span>
-                      <p className="text-sm leading-relaxed text-slate-300">
+                      <p className="text-sm leading-relaxed" style={{ color: theme.text, opacity: 0.85 }}>
                         {step}
                       </p>
                     </div>
@@ -119,7 +149,10 @@ export default function ReadMoreModal({
 
               {/* Citations */}
               <div>
-                <h3 className="mb-4 text-xs font-semibold uppercase tracking-widest text-stealth-muted">
+                <h3
+                  className="mb-4 text-xs font-semibold uppercase tracking-widest"
+                  style={{ color: theme.textMuted }}
+                >
                   Trusted Sources
                 </h3>
                 <div className="space-y-2">
@@ -129,13 +162,20 @@ export default function ReadMoreModal({
                       href={citation.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="group flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3 transition hover:border-teal-500/30 hover:bg-teal-500/5"
+                      className="group flex items-center gap-3 rounded-xl px-4 py-3 transition"
+                      style={{
+                        border: `1px solid ${theme.cardBorder}`,
+                        backgroundColor: `${theme.accent}08`,
+                      }}
                     >
-                      <CheckCircle2 className="h-4 w-4 shrink-0 text-teal-500" />
-                      <span className="flex-1 text-sm font-medium text-slate-200 group-hover:text-teal-400">
+                      <CheckCircle2 className="h-4 w-4 shrink-0" style={{ color: theme.accent }} />
+                      <span
+                        className="flex-1 text-sm font-medium"
+                        style={{ color: theme.text }}
+                      >
                         {citation.sourceName}
                       </span>
-                      <ExternalLink className="h-3.5 w-3.5 shrink-0 text-stealth-muted/50 transition group-hover:text-teal-500" />
+                      <ExternalLink className="h-3.5 w-3.5 shrink-0" style={{ color: theme.textMuted }} />
                     </a>
                   ))}
                 </div>

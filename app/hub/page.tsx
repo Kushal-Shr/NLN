@@ -8,9 +8,11 @@ import {
   Loader2,
   Hash,
 } from "lucide-react";
-import PageContainer from "@/components/shared/PageContainer";
+import Navbar from "@/components/shared/Navbar";
 import ResilienceCard from "@/components/features/hub/ResilienceCard";
 import ReadMoreModal from "@/components/features/hub/ReadMoreModal";
+import ThemeDoodles from "@/components/shared/ThemesDoddles";
+import { useTheme } from "@/lib/ThemeContext";
 import { db, auth } from "@/lib/db";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import type { LibraryResult, DiscoveryCard, PersonaTone } from "@/lib/types";
@@ -60,9 +62,12 @@ function getDiscoveryFeed(persona: PersonaTone | null): DiscoveryCard[] {
 }
 
 export default function HubPage() {
+  const theme = useTheme();
+
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
 
   const [persona, setPersona] = useState<PersonaTone | null>(null);
   const [discoveryCards, setDiscoveryCards] = useState<DiscoveryCard[]>(ALL_DISCOVERY_CARDS);
@@ -78,6 +83,7 @@ export default function HubPage() {
   const [bookmarking, setBookmarking] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     const p = getPersona();
     setPersona(p);
     setDiscoveryCards(getDiscoveryFeed(p));
@@ -116,7 +122,7 @@ export default function HubPage() {
           title: result.title,
           teaser: result.description.split("\n")[0]?.slice(0, 140) || q,
           query: q,
-          image: `https://images.unsplash.com/photo-1519681393784-d120267933ba?w=600&q=80`,
+          image: "https://images.unsplash.com/photo-1519681393784-d120267933ba?w=600&q=80",
           persona: "all",
         };
 
@@ -220,9 +226,19 @@ export default function HubPage() {
 
   const displayCards = isSearchMode ? searchCards : discoveryCards;
 
+  if (!mounted) return null;
+
   return (
-    <PageContainer>
-      <main className="space-y-8">
+    <div
+      className="relative min-h-screen"
+      style={{ backgroundColor: theme.bg, color: theme.text, fontFamily: "'Georgia', serif" }}
+    >
+      <Navbar />
+      <ThemeDoodles />
+
+      <main
+        className="relative z-10 mx-auto w-full max-w-5xl space-y-8 px-6 pb-10 pt-10"
+      >
         {/* Header */}
         <motion.header
           initial={{ opacity: 0, y: -10 }}
@@ -231,15 +247,24 @@ export default function HubPage() {
           className="space-y-1"
         >
           <div className="flex items-center gap-2.5">
-            <BookOpen className="h-6 w-6 text-stealth-accent" />
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-stealth-muted">
+            <BookOpen className="h-5 w-5" style={{ color: theme.accent }} />
+            <p
+              className="text-[11px] font-semibold uppercase tracking-[0.2em]"
+              style={{ color: theme.textMuted, fontFamily: "sans-serif" }}
+            >
               Wisdom Library
             </p>
           </div>
-          <h1 className="text-3xl font-semibold text-stealth-text">
+          <h1
+            className="text-[26px] font-normal"
+            style={{ color: theme.text, lineHeight: 1.35 }}
+          >
             Resilience Gallery
           </h1>
-          <p className="max-w-xl text-sm text-stealth-muted">
+          <p
+            className="max-w-xl text-sm"
+            style={{ color: theme.textMuted, fontFamily: "sans-serif", lineHeight: 1.6 }}
+          >
             {persona
               ? `Curated for your ${persona} path — explore topics that resonate with your journey.`
               : "Explore research-backed wisdom, practical guidance, and trusted sources — all in one place."}
@@ -254,7 +279,7 @@ export default function HubPage() {
           className="flex items-center gap-3"
         >
           <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-stealth-muted" />
+            <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2" style={{ color: theme.textMuted }} />
             <input
               type="text"
               value={query}
@@ -263,14 +288,26 @@ export default function HubPage() {
                 if (e.key === "Enter") searchLibrary();
               }}
               placeholder="Search for focus, rest, grounding, connection..."
-              className="w-full rounded-xl border border-white/10 bg-stealth-card py-3.5 pl-11 pr-4 text-sm text-stealth-text placeholder:text-stealth-muted/50 transition focus:border-stealth-accent/50 focus:outline-none focus:ring-1 focus:ring-stealth-accent/30"
+              className="w-full rounded-xl py-3.5 pl-11 pr-4 text-sm transition focus:outline-none focus:ring-2"
+              style={{
+                backgroundColor: theme.cardBg,
+                border: `1px solid ${theme.cardBorder}`,
+                color: theme.text,
+                fontFamily: "sans-serif",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
+              }}
             />
           </div>
           <button
             type="button"
             onClick={() => searchLibrary()}
             disabled={loading}
-            className="shrink-0 rounded-xl bg-stealth-accent px-6 py-3.5 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-50"
+            className="shrink-0 rounded-xl px-6 py-3.5 text-sm font-medium transition disabled:opacity-50"
+            style={{
+              backgroundColor: theme.btnBg,
+              color: theme.btnColor,
+              fontFamily: "sans-serif",
+            }}
           >
             {loading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -291,14 +328,23 @@ export default function HubPage() {
             <button
               type="button"
               onClick={clearSearch}
-              className="rounded-full border border-stealth-accent/30 bg-stealth-accent/10 px-3.5 py-1.5 text-xs font-medium text-stealth-accent transition hover:bg-stealth-accent/20"
+              className="rounded-full px-3.5 py-1.5 text-xs font-medium transition"
+              style={{
+                border: `1px solid ${theme.accentSoft}`,
+                backgroundColor: `${theme.accent}10`,
+                color: theme.accent,
+                fontFamily: "sans-serif",
+              }}
             >
               &larr; Back to Discovery
             </button>
           )}
           {!isSearchMode && (
             <>
-              <p className="mr-1 text-[11px] font-semibold uppercase tracking-widest text-stealth-muted/60">
+              <p
+                className="mr-1 text-[11px] font-semibold uppercase tracking-widest"
+                style={{ color: theme.textMuted, opacity: 0.6, fontFamily: "sans-serif" }}
+              >
                 Trending
               </p>
               {TRENDING.map((t) => (
@@ -306,7 +352,12 @@ export default function HubPage() {
                   key={t.query}
                   type="button"
                   onClick={() => handleTrending(t.query)}
-                  className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.03] px-3.5 py-1.5 text-xs font-medium text-stealth-muted transition hover:border-stealth-accent/30 hover:bg-stealth-accent/5 hover:text-stealth-accent"
+                  className="inline-flex items-center gap-1 rounded-full px-3.5 py-1.5 text-xs font-medium transition"
+                  style={{
+                    border: `1px solid ${theme.cardBorder}`,
+                    color: theme.textMuted,
+                    fontFamily: "sans-serif",
+                  }}
                 >
                   <Hash className="h-3 w-3" />
                   {t.label}
@@ -321,7 +372,8 @@ export default function HubPage() {
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="text-sm text-red-400"
+            className="text-sm"
+            style={{ color: "#c0392b", fontFamily: "sans-serif" }}
           >
             {error}
           </motion.p>
@@ -332,10 +384,14 @@ export default function HubPage() {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex items-center justify-center gap-3 rounded-xl border border-stealth-accent/20 bg-stealth-accent/5 py-16"
+            className="flex items-center justify-center gap-3 rounded-xl py-16"
+            style={{
+              backgroundColor: `${theme.accent}08`,
+              border: `1px solid ${theme.cardBorder}`,
+            }}
           >
-            <Loader2 className="h-5 w-5 animate-spin text-stealth-accent" />
-            <span className="text-sm text-stealth-muted">
+            <Loader2 className="h-5 w-5 animate-spin" style={{ color: theme.accent }} />
+            <span className="text-sm" style={{ color: theme.textMuted, fontFamily: "sans-serif" }}>
               The Library is assembling your wisdom...
             </span>
           </motion.div>
@@ -370,8 +426,8 @@ export default function HubPage() {
             animate={{ opacity: 1 }}
             className="flex flex-col items-center justify-center gap-2 py-16 text-center"
           >
-            <Search className="h-8 w-8 text-stealth-muted/30" />
-            <p className="text-sm text-stealth-muted">
+            <Search className="h-8 w-8" style={{ color: `${theme.textMuted}50` }} />
+            <p className="text-sm" style={{ color: theme.textMuted, fontFamily: "sans-serif" }}>
               No results yet — try searching for a topic above.
             </p>
           </motion.div>
@@ -387,6 +443,6 @@ export default function HubPage() {
         onClose={() => setModalOpen(false)}
         onBookmark={handleBookmark}
       />
-    </PageContainer>
+    </div>
   );
 }

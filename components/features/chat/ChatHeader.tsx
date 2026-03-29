@@ -1,6 +1,7 @@
 "use client";
 
 import { Phone, Video, DoorOpen, Menu } from "lucide-react";
+import { useTheme } from "@/lib/ThemeContext";
 import type { Peer } from "./types";
 
 type ChatHeaderProps = {
@@ -16,13 +17,19 @@ export default function ChatHeader({
   onVideoCall,
   onMobileMenuToggle,
 }: ChatHeaderProps) {
+  const theme = useTheme();
+
   return (
-    <header className="flex items-center gap-3 border-b border-white/10 px-4 py-3">
+    <header
+      className="flex items-center gap-3 px-4 py-3"
+      style={{ borderBottom: `1px solid ${theme.cardBorder}` }}
+    >
       {/* Mobile hamburger */}
       <button
         type="button"
         onClick={onMobileMenuToggle}
-        className="rounded-lg p-1.5 text-stealth-muted hover:bg-white/5 md:hidden"
+        className="rounded-lg p-1.5 md:hidden"
+        style={{ color: theme.textMuted }}
         aria-label="Toggle sidebar"
       >
         <Menu className="h-5 w-5" />
@@ -31,7 +38,10 @@ export default function ChatHeader({
       {/* Name + tier */}
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <h2 className="text-sm font-semibold text-stealth-text">
+          <h2
+            className="text-sm font-semibold"
+            style={{ color: theme.text, fontFamily: "sans-serif" }}
+          >
             {peer.name}
           </h2>
           {peer.online && (
@@ -39,7 +49,12 @@ export default function ChatHeader({
           )}
         </div>
         {peer.tier && (
-          <p className="text-[11px] text-stealth-muted">{peer.tier}</p>
+          <p
+            className="text-[11px]"
+            style={{ color: theme.textMuted, fontFamily: "sans-serif" }}
+          >
+            {peer.tier}
+          </p>
         )}
       </div>
 
@@ -48,7 +63,8 @@ export default function ChatHeader({
         <button
           type="button"
           onClick={onVoiceCall}
-          className="rounded-lg p-2 text-stealth-muted transition hover:bg-white/5 hover:text-stealth-text"
+          className="rounded-lg p-2 transition"
+          style={{ color: theme.textMuted }}
           aria-label="Voice call"
         >
           <Phone className="h-4 w-4" />
@@ -56,7 +72,8 @@ export default function ChatHeader({
         <button
           type="button"
           onClick={onVideoCall}
-          className="rounded-lg p-2 text-stealth-muted transition hover:bg-white/5 hover:text-stealth-text"
+          className="rounded-lg p-2 transition"
+          style={{ color: theme.textMuted }}
           aria-label="Video call"
         >
           <Video className="h-4 w-4" />

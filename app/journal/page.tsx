@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { BookOpen, Menu, X } from "lucide-react";
 import JournalSidebar from "@/components/features/journal/JournalSidebar";
@@ -8,6 +8,9 @@ import EntryEditor from "@/components/features/journal/EntryEditor";
 import { SEED_ENTRIES } from "@/components/features/journal/types";
 import type { JournalEntry } from "@/components/features/journal/types";
 import type { JournalSpark } from "@/lib/gemini";
+import NavBar from "@/components/shared/Navbar";
+import ThemeDoodles from "@/components/shared/ThemesDoddles";
+import { useTheme } from "@/lib/ThemeContext";
 
 function createBlankEntry(): JournalEntry {
   return {
@@ -21,53 +24,68 @@ function createBlankEntry(): JournalEntry {
 }
 
 export default function JournalPage() {
-  const [entries, setEntries] = useState<JournalEntry[]>(SEED_ENTRIES);
-  const [activeId, setActiveId] = useState<string | null>(
-    SEED_ENTRIES[0]?.id ?? null
-  );
-  const [spark, setSpark] = useState<string | null>(null);
+  const theme = useTheme();
+
+  const [entries,    setEntries]    = useState<JournalEntry[]>(SEED_ENTRIES);
+  const [activeId,   setActiveId]   = useState<string | null>(SEED_ENTRIES[0]?.id ?? null);
+  const [spark,      setSpark]      = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mounted,    setMounted]    = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     fetch("/api/journal-spark")
       .then((r) => r.json())
       .then((data: JournalSpark) => setSpark(data.prompt))
       .catch(() => setSpark(null));
   }, []);
 
+  if (!mounted) return null;
+
   const activeEntry = entries.find((e) => e.id === activeId) ?? null;
 
-  const handleSelect = useCallback((id: string) => {
+  const handleSelect = (id: string) => {
     setActiveId(id);
     setMobileOpen(false);
-  }, []);
+  };
 
-  const handleNew = useCallback(() => {
+  const handleNew = () => {
     const blank = createBlankEntry();
     setEntries((prev) => [blank, ...prev]);
     setActiveId(blank.id);
     setMobileOpen(false);
-  }, []);
+  };
 
-  const handleUpdate = useCallback(
-    (patch: Partial<JournalEntry>) => {
-      setEntries((prev) =>
-        prev.map((e) => (e.id === activeId ? { ...e, ...patch } : e))
-      );
-    },
-    [activeId]
-  );
+  const handleUpdate = (patch: Partial<JournalEntry>) => {
+    setEntries((prev) =>
+      prev.map((e) => (e.id === activeId ? { ...e, ...patch } : e))
+    );
+  };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-950 pt-16">
-      {/* Mobile toggle */}
+    <div style={{ height: "100vh", display: "flex", flexDirection: "column", backgroundColor: theme.bg, position: "relative", overflow: "hidden" }}>
+
+      {/* Background doodles */}
+      <ThemeDoodles />
+
+      {/* Navbar */}
+      <div style={{ position: "relative", zIndex: 10 }}>
+        <NavBar />
+      </div>
+
+      {/* Mobile toggle button */}
       <button
         type="button"
         onClick={() => setMobileOpen((v) => !v)}
-        className="fixed left-4 top-4 z-50 rounded-lg bg-stealth-card p-2 text-stealth-muted shadow-lg md:hidden"
+        style={{
+          position: "fixed", left: "16px", top: "70px", zIndex: 50,
+          background: theme.cardBg, border: `1px solid ${theme.cardBorder}`,
+          borderRadius: "10px", padding: "8px", color: theme.textMuted,
+          cursor: "pointer", display: "none", // hide on desktop
+        }}
         aria-label="Toggle sidebar"
       >
-        {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        {mobileOpen ? <X size={18} /> : <Menu size={18} />}
       </button>
 
       {/* Mobile backdrop */}
@@ -78,53 +96,66 @@ export default function JournalPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-40 bg-black/60 md:hidden"
             onClick={() => setMobileOpen(false)}
+            style={{
+              position: "fixed", inset: 0, zIndex: 40,
+              background: "rgba(0,0,0,0.5)",
+            }}
           />
         )}
       </AnimatePresence>
 
-      {/* Sidebar */}
-      <div
-        className={`fixed inset-y-0 left-0 z-50 transition-transform duration-300 md:static md:z-auto md:translate-x-0 ${
-          mobileOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
-      >
-        <JournalSidebar
-          entries={entries}
-          activeId={activeId}
-          onSelect={handleSelect}
-          onNew={handleNew}
-        />
-      </div>
+      {/* Main layout — sidebar + editor */}
+      <div style={{ display: "flex", flex: 1, overflow: "hidden", position: "relative", zIndex: 1 }}>
 
-      {/* Editor pane */}
-      <main className="flex min-w-0 flex-1 flex-col">
-        <AnimatePresence mode="wait">
-          {activeEntry ? (
-            <EntryEditor
-              key={activeEntry.id}
-              entry={activeEntry}
-              spark={spark}
-              onUpdate={handleUpdate}
-            />
-          ) : (
-            <motion.div
-              key="empty"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="flex flex-1 flex-col items-center justify-center gap-4"
-            >
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-stealth-card">
-                <BookOpen className="h-7 w-7 text-stealth-muted" />
-              </div>
-              <p className="text-sm text-stealth-muted">
-                Select a reflection or start a new one.
-              </p>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </main>
+        {/* SIDEBAR */}
+        <div style={{
+          transform: mobileOpen ? "translateX(0)" : undefined,
+          flexShrink: 0,
+        }}>
+          <JournalSidebar
+            entries={entries}
+            activeId={activeId}
+            onSelect={handleSelect}
+            onNew={handleNew}
+          />
+        </div>
+
+        {/* EDITOR PANE */}
+        <main style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, overflowY: "auto" }}>
+          <AnimatePresence mode="wait">
+            {activeEntry ? (
+              <EntryEditor
+                key={activeEntry.id}
+                entry={activeEntry}
+                spark={spark}
+                onUpdate={handleUpdate}
+              />
+            ) : (
+              <motion.div
+                key="empty"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                style={{
+                  flex: 1, display: "flex", flexDirection: "column",
+                  alignItems: "center", justifyContent: "center", gap: "16px",
+                }}
+              >
+                <div style={{
+                  width: "64px", height: "64px", borderRadius: "16px",
+                  background: theme.cardBg, border: `1px solid ${theme.cardBorder}`,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
+                  <BookOpen size={28} color={theme.textMuted} />
+                </div>
+                <p style={{ fontSize: "13px", fontFamily: "sans-serif", color: theme.textMuted }}>
+                  Select a reflection or start a new one.
+                </p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </main>
+      </div>
     </div>
   );
 }

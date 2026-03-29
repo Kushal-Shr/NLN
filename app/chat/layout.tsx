@@ -1,11 +1,14 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import Navbar from "@/components/shared/Navbar";
+import { useTheme } from "@/lib/ThemeContext";
 import { ChatProvider, useChatContext } from "@/components/features/chat/ChatContext";
 import ChatSidebar from "@/components/features/chat/ChatSidebar";
 import CallOverlay from "@/components/features/chat/CallOverlay";
 
 function ChatShell({ children }: { children: React.ReactNode }) {
+  const theme = useTheme();
   const pathname = usePathname();
   const { mobileOpen, closeMobile, callPeer, endCall, nukeSession } =
     useChatContext();
@@ -15,21 +18,28 @@ function ChatShell({ children }: { children: React.ReactNode }) {
     : null;
 
   return (
-    <div className="flex h-screen overflow-hidden pt-16">
-      <ChatSidebar
-        activeChatId={activeChatId}
-        onNuke={nukeSession}
-        mobileOpen={mobileOpen}
-        onMobileClose={closeMobile}
-      />
+    <div
+      className="flex h-screen flex-col"
+      style={{ backgroundColor: theme.bg, color: theme.text }}
+    >
+      <Navbar />
 
-      <main className="flex min-w-0 flex-1 flex-col">{children}</main>
+      <div className="flex min-h-0 flex-1 overflow-hidden">
+        <ChatSidebar
+          activeChatId={activeChatId}
+          onNuke={nukeSession}
+          mobileOpen={mobileOpen}
+          onMobileClose={closeMobile}
+        />
 
-      <CallOverlay
-        open={!!callPeer}
-        peerName={callPeer ?? ""}
-        onEnd={endCall}
-      />
+        <main className="flex min-w-0 flex-1 flex-col">{children}</main>
+
+        <CallOverlay
+          open={!!callPeer}
+          peerName={callPeer ?? ""}
+          onEnd={endCall}
+        />
+      </div>
     </div>
   );
 }
