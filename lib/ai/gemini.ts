@@ -78,6 +78,10 @@ Respond ONLY with a JSON object containing:
 - "guidance": an array of exactly 3 actionable steps the user can take right now
 - "citations": an array of 3 objects, each with "sourceName" (e.g. "World Health Organization", "American Psychological Association", "Harvard Health Publishing") and "url" (a real https URL to the source)`;
 
+export const TRANSLATE_SYSTEM_INSTRUCTION = `You are a precise UI translator. Translate the given UI text into the target language. Return ONLY the translated string with no extra text, no quotes, no explanation. Preserve any special characters, emoji, or formatting exactly as they appear. If the text is a single word, return a single word. If it is a sentence, return a sentence.`;
+
+export const BATCH_TRANSLATE_SYSTEM_INSTRUCTION = `You are a JSON-to-JSON localization engine. You receive a JSON object whose values are UI strings in English. Translate every value into the target language while keeping the keys identical. Return ONLY the valid JSON object with the same keys and translated values. Do not add, remove, or rename any keys.`;
+
 // ── Model Factory ───────────────────────────
 
 export function getReframeModel() {
@@ -106,6 +110,35 @@ export function getLibraryModel() {
       temperature: 0.7,
       topP: 0.9,
       maxOutputTokens: 65536,
+    },
+  });
+}
+
+export function getTranslateModel() {
+  if (!genAI) return null;
+  return genAI.getGenerativeModel({
+    model: MODEL_NAME,
+    systemInstruction: TRANSLATE_SYSTEM_INSTRUCTION,
+    safetySettings: SAFETY_SETTINGS,
+    generationConfig: {
+      temperature: 0.1,
+      topP: 0.8,
+      maxOutputTokens: 256,
+    },
+  });
+}
+
+export function getBatchTranslateModel() {
+  if (!genAI) return null;
+  return genAI.getGenerativeModel({
+    model: MODEL_NAME,
+    systemInstruction: BATCH_TRANSLATE_SYSTEM_INSTRUCTION,
+    safetySettings: SAFETY_SETTINGS,
+    generationConfig: {
+      responseMimeType: "application/json",
+      temperature: 0.1,
+      topP: 0.8,
+      maxOutputTokens: 8192,
     },
   });
 }

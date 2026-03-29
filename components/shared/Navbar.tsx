@@ -2,8 +2,8 @@
 
 import { useRouter, usePathname } from "next/navigation";
 import { useTheme } from "@/lib/ThemeContext";
+import LanguageSelector from "@/components/shared/LanguageSelector";
 
-// Nav items and where they route to
 const navItems = [
   { label: "Home",             path: "/dashboard" },
   { label: "Information Hub",  path: "/hub" },
@@ -15,7 +15,7 @@ const navItems = [
 export default function Navbar() {
   const theme    = useTheme();
   const router   = useRouter();
-  const pathname = usePathname(); // ← tells us which page we're on
+  const pathname = usePathname();
 
   const handleQuickExit = () => {
     localStorage.clear();
@@ -54,7 +54,6 @@ export default function Navbar() {
       {/* Nav links */}
       <div style={{ display: "flex", gap: "28px" }}>
         {navItems.map((item) => {
-          // isActive = true when current page matches this nav item
           const isActive = pathname === item.path || pathname?.startsWith(item.path + "/");
           return (
             <button
@@ -69,7 +68,6 @@ export default function Navbar() {
                 color: isActive ? theme.accent : theme.textMuted,
                 fontWeight: isActive ? 600 : 400,
                 padding: "0 0 2px 0",
-                // Active underline
                 borderBottom: isActive
                   ? `2px solid ${theme.accent}`
                   : "2px solid transparent",
@@ -82,22 +80,26 @@ export default function Navbar() {
         })}
       </div>
 
-      {/* Quick Exit */}
-      <button
-        onClick={handleQuickExit}
-        style={{
-          background: "#c0392b",
-          color: "white",
-          border: "none",
-          borderRadius: "20px",
-          padding: "7px 18px",
-          fontSize: "12px",
-          fontFamily: "sans-serif",
-          cursor: "pointer",
-        }}
-      >
-        Quick Exit
-      </button>
+      {/* Right actions */}
+      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+        <LanguageSelector />
+
+        <button
+          onClick={handleQuickExit}
+          style={{
+            background: "#c0392b",
+            color: "white",
+            border: "none",
+            borderRadius: "20px",
+            padding: "7px 18px",
+            fontSize: "12px",
+            fontFamily: "sans-serif",
+            cursor: "pointer",
+          }}
+        >
+          Quick Exit
+        </button>
+      </div>
     </nav>
   );
 }
