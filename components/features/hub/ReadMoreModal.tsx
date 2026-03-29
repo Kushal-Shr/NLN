@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
@@ -7,6 +8,8 @@ import {
   ExternalLink,
   Bookmark,
   BookmarkCheck,
+  Sparkles,
+  Loader2,
 } from "lucide-react";
 import { useTheme } from "@/lib/ThemeContext";
 import type { LibraryResult } from "@/lib/types";
@@ -30,6 +33,50 @@ export default function ReadMoreModal({
 }: ReadMoreModalProps) {
   const theme = useTheme();
 
+  const [isSummarized, setIsSummarized] = useState(false);
+  const [summaryBullets, setSummaryBullets] = useState<string[]>([]);
+  const [summarizing, setSummarizing] = useState(false);
+
+  const summaryCache = useRef<Map<string, string[]>>(new Map());
+
+  const handleSummarize = useCallback(async () => {
+    if (!result) return;
+
+    const cacheKey = result.title + "|" + result.description.slice(0, 60);
+
+    if (summaryCache.current.has(cacheKey)) {
+      setSummaryBullets(summaryCache.current.get(cacheKey)!);
+      setIsSummarized(true);
+      return;
+    }
+
+    setSummarizing(true);
+    try {
+      const res = await fetch("/api/ai/summarize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text: result.description + "\n\n" + result.guidance.join("\n"),
+        }),
+      });
+      const data = await res.json();
+      const bullets: string[] = data.bullets ?? [];
+      summaryCache.current.set(cacheKey, bullets);
+      setSummaryBullets(bullets);
+      setIsSummarized(true);
+    } catch {
+      console.error("Summarize failed");
+    } finally {
+      setSummarizing(false);
+    }
+  }, [result]);
+
+  const handleClose = useCallback(() => {
+    setIsSummarized(false);
+    setSummaryBullets([]);
+    onClose();
+  }, [onClose]);
+
   if (!result) return null;
 
   return (
@@ -41,7 +88,7 @@ export default function ReadMoreModal({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={onClose}
+            onClick={handleClose}
             className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm"
           />
 
@@ -77,6 +124,28 @@ export default function ReadMoreModal({
                 </h2>
               </div>
               <div className="flex items-center gap-2">
+                {/* Summarize */}
+                <button
+                  type="button"
+                  onClick={isSummarized ? () => setIsSummarized(false) : handleSummarize}
+                  disabled={summarizing}
+                  className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition"
+                  style={{
+                    border: "1px solid #1a3c2a",
+                    color: isSummarized ? "#fff" : "#1a3c2a",
+                    backgroundColor: isSummarized ? "#1a3c2a" : "transparent",
+                    fontFamily: "sans-serif",
+                  }}
+                >
+                  {summarizing ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-3.5 w-3.5" />
+                  )}
+                  {isSummarized ? "Full View" : "Summarize"}
+                </button>
+
+                {/* Bookmark */}
                 <button
                   type="button"
                   onClick={onBookmark}
@@ -95,9 +164,11 @@ export default function ReadMoreModal({
                     <Bookmark className="h-4 w-4" />
                   )}
                 </button>
+
+                {/* Close */}
                 <button
                   type="button"
-                  onClick={onClose}
+                  onClick={handleClose}
                   className="rounded-lg p-2 transition"
                   style={{
                     border: `1px solid ${theme.cardBorder}`,
@@ -112,12 +183,42 @@ export default function ReadMoreModal({
 
             {/* Scrollable content */}
             <div className="flex-1 overflow-y-auto p-6 space-y-8">
-              {/* Description */}
-              <div className="space-y-3 text-sm leading-relaxed" style={{ color: theme.text, opacity: 0.85 }}>
-                {result.description.split("\n").map((p, i) => (
-                  <p key={i}>{p}</p>
-                ))}
-              </div>
+              {/* Description — full or summarized */}
+              {isSummarized ? (
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="space-y-3"
+                >
+                  <p
+                    className="text-[10px] font-semibold uppercase tracking-widest"
+                    style={{ color: theme.accent, fontFamily: "sans-serif" }}
+                  >
+                    Summary
+                  </p>
+                  <ul className="space-y-2.5">
+                    {summaryBullets.map((bullet, i) => (
+                      <li
+                        key={i}
+                        className="flex items-start gap-2.5 text-sm leading-relaxed"
+                        style={{ color: theme.text }}
+                      >
+                        <span
+                          className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full"
+                          style={{ backgroundColor: theme.accent }}
+                        />
+                        {bullet}
+                      </li>
+                    ))}
+                  </ul>
+                </motion.div>
+              ) : (
+                <div className="space-y-3 text-sm leading-relaxed" style={{ color: theme.text, opacity: 0.85 }}>
+                  {result.description.split("\n").map((p, i) => (
+                    <p key={i}>{p}</p>
+                  ))}
+                </div>
+              )}
 
               {/* Guidance */}
               <div>

@@ -1,252 +1,414 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
-import ThemesDoddles from "@/components/shared/ThemesDoddles";
+import {
+  Zap,
+  Target,
+  Calendar,
+  Clock,
+  ChevronRight,
+  Sparkles,
+} from "lucide-react";
+import Navbar from "@/components/shared/Navbar";
 import { useTheme } from "@/lib/ThemeContext";
-import LanguageSelector from "@/components/shared/LanguageSelector";
 
-const moods = [
+// ── Daily Pulse mood options ────────────────────────────────────────
+
+const MOODS = [
   { emoji: "😔", label: "Heavy" },
   { emoji: "😐", label: "Okay" },
   { emoji: "🙂", label: "Calm" },
   { emoji: "😊", label: "Good" },
+  { emoji: "✨", label: "Great" },
 ];
 
-const navItems = ["Home", "Information Hub", "Circles", "Inner Ledger", "Mentors"];
+// ── AI-generated roadmap cards ──────────────────────────────────────
+
+interface RoadmapCard {
+  id: string;
+  time: string;
+  title: string;
+  why: string;
+  isCurrent: boolean;
+  duration: string;
+}
+
+const ROADMAP_CARDS: RoadmapCard[] = [
+  {
+    id: "r1",
+    time: "9:00 AM",
+    title: "Morning Grounding",
+    why: "Starting the day anchored reduces the weight of everything that follows.",
+    isCurrent: true,
+    duration: "15 min",
+  },
+  {
+    id: "r2",
+    time: "9:30 AM",
+    title: "Deep Work Block",
+    why: "Your focus peaks in the morning — protect this window for what matters most.",
+    isCurrent: false,
+    duration: "90 min",
+  },
+  {
+    id: "r3",
+    time: "11:00 AM",
+    title: "Movement Break",
+    why: "A short walk resets your nervous system and boosts clarity for the next sprint.",
+    isCurrent: false,
+    duration: "20 min",
+  },
+  {
+    id: "r4",
+    time: "11:30 AM",
+    title: "Creative Exploration",
+    why: "After movement, your mind is primed for lateral thinking and new ideas.",
+    isCurrent: false,
+    duration: "60 min",
+  },
+  {
+    id: "r5",
+    time: "1:00 PM",
+    title: "Nourishment & Rest",
+    why: "Eating mindfully isn't a break from productivity — it fuels the second half.",
+    isCurrent: false,
+    duration: "45 min",
+  },
+  {
+    id: "r6",
+    time: "2:00 PM",
+    title: "Collaborative Session",
+    why: "Afternoon energy suits connection — meetings and pair work thrive here.",
+    isCurrent: false,
+    duration: "60 min",
+  },
+  {
+    id: "r7",
+    time: "3:30 PM",
+    title: "Reflection & Planning",
+    why: "Closing the day with intention prevents tomorrow from feeling overwhelming.",
+    isCurrent: false,
+    duration: "30 min",
+  },
+];
+
+// ── Fade-up animation variant ───────────────────────────────────────
 
 const fadeUp = {
-  hidden: { opacity: 0, y: 18 },
+  hidden: { opacity: 0, y: 16 },
   show: (i: number) => ({
-    opacity: 1, y: 0,
-    transition: { delay: i * 0.07, duration: 0.5, ease: "easeOut" as const },
+    opacity: 1,
+    y: 0,
+    transition: { delay: i * 0.06, duration: 0.45, ease: "easeOut" as const },
   }),
 };
 
+// ── Slider component ────────────────────────────────────────────────
+
+function LevelSlider({
+  label,
+  icon: Icon,
+  value,
+  onChange,
+  theme,
+}: {
+  label: string;
+  icon: React.ElementType;
+  value: number;
+  onChange: (v: number) => void;
+  theme: ReturnType<typeof useTheme>;
+}) {
+  return (
+    <div>
+      <div
+        className="mb-2 flex items-center justify-between"
+        style={{ fontFamily: "sans-serif" }}
+      >
+        <div className="flex items-center gap-2">
+          <Icon className="h-3.5 w-3.5" style={{ color: theme.accent }} />
+          <span className="text-xs font-medium" style={{ color: theme.text }}>
+            {label}
+          </span>
+        </div>
+        <span
+          className="text-xs font-semibold"
+          style={{ color: theme.accent }}
+        >
+          {value}/10
+        </span>
+      </div>
+      <input
+        type="range"
+        min={1}
+        max={10}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="w-full accent-green-700"
+        style={{ height: "4px" }}
+      />
+    </div>
+  );
+}
+
+// ── Main page ───────────────────────────────────────────────────────
+
 export default function DashboardPage() {
-  const router = useRouter();
   const theme = useTheme();
 
-  const [mood,      setMood]      = useState<string | null>(null);
-  const [activeNav, setActiveNav] = useState("Home");
-  const [mounted,   setMounted]   = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [mood, setMood] = useState<string | null>(null);
+  const [energy, setEnergy] = useState(6);
+  const [focus, setFocus] = useState(5);
+  const [calSynced, setCalSynced] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
+  const handleSyncCalendar = useCallback(() => {
+    setCalSynced(true);
+  }, []);
+
   if (!mounted) return null;
 
-  // Quick Exit — safety feature, always available
-  const handleQuickExit = () => {
-    localStorage.clear();
-    window.location.href = "https://www.google.com";
-  };
-
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: theme.bg, color: theme.text, fontFamily: "'Georgia', serif" }}>
-          <ThemesDoddles/>
-      <nav style={{
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "16px 32px",
-        borderBottom: `1px solid ${theme.navBorder}`,
+    <div
+      className="min-h-screen"
+      style={{
         backgroundColor: theme.bg,
-        position: "sticky", top: 0, zIndex: 100,
-      }}>
-        {/* Logo */}
-        <div style={{ color: theme.accent, fontSize: "13px", letterSpacing: "0.2em", textTransform: "uppercase", fontFamily: "sans-serif" }}>
-          Sanctuary
-        </div>
+        color: theme.text,
+        fontFamily: "'Georgia', serif",
+      }}
+    >
+      <Navbar />
 
-        {/* Nav links */}
-        <div style={{ display: "flex", gap: "28px" }}>
-          {navItems.map((item) => (
-            <button
-              key={item}
-              onClick={() => {
-                  setActiveNav(item);
-                  if (item === "Information Hub") router.push("/hub");
-                  if(item === "Inner Ledger") router.push("/journal");
-                  if(item === "Circles") router.push("/events")
-                  if(item === "Mentors") router.push("/chat");
-              }} 
-              style={{
-                background: "none", border: "none", cursor: "pointer",
-                fontSize: "13px", fontFamily: "sans-serif",
-                color: activeNav === item ? theme.accent : theme.textMuted,
-                fontWeight: activeNav === item ? 600 : 400,
-                padding: 0, transition: "color 0.2s",
-                // Active item gets a subtle underline
-                borderBottom: activeNav === item ? `2px solid ${theme.accentSoft}` : "2px solid transparent",
-                paddingBottom: "2px",
-              }}
-            >
-              {item}
-            </button>
-          ))}
-        </div>
-
-        {/* Quick Exit — always red */}
-      {/* Right side */}
-<div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-  <LanguageSelector />
-  <button
-    onClick={handleQuickExit}
-    style={{
-      background: "#c0392b", color: "white", border: "none",
-      borderRadius: "20px", padding: "7px 18px",
-      fontSize: "12px", fontFamily: "sans-serif", cursor: "pointer",
-    }}
-  >
-    Quick Exit
-  </button>
-</div>
-      </nav>
-
-      <main style={{ padding: "44px 32px", maxWidth: "880px", margin: "0 auto", position: "relative", zIndex: 1 }}>
-
-        {/* --- GREETING --- */}
-        <motion.div variants={fadeUp} initial="hidden" animate="show" custom={0} style={{ marginBottom: "28px" }}>
-          <p style={{ color: theme.accentSoft, fontSize: "11px", letterSpacing: "0.18em", textTransform: "uppercase", fontFamily: "sans-serif", marginBottom: "10px" }}>
+      <main className="mx-auto w-full max-w-3xl space-y-10 px-6 pb-16 pt-10">
+        {/* ── Greeting ───────────────────────────────────── */}
+        <motion.div variants={fadeUp} initial="hidden" animate="show" custom={0}>
+          <p
+            className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em]"
+            style={{ color: theme.accentSoft, fontFamily: "sans-serif" }}
+          >
             {theme.tag}
           </p>
-          <h1 style={{ fontSize: "26px", fontWeight: "normal", lineHeight: 1.35, marginBottom: "8px", color: theme.text }}>
+          <h1
+            className="text-[26px] font-normal"
+            style={{ color: theme.text, lineHeight: 1.35 }}
+          >
             {theme.greeting}
           </h1>
-          <p style={{ color: theme.textMuted, fontSize: "14px", fontFamily: "sans-serif", lineHeight: 1.6 }}>
+          <p
+            className="mt-1 max-w-lg text-sm"
+            style={{
+              color: theme.textMuted,
+              fontFamily: "sans-serif",
+              lineHeight: 1.6,
+            }}
+          >
             {theme.greetingSub}
           </p>
         </motion.div>
 
-        {/* --- QUOTE CARD --- */}
-        <motion.div
-          variants={fadeUp} initial="hidden" animate="show" custom={1}
-          style={{
-            background: theme.quoteBg,
-            border: `1px solid ${theme.quoteBorder}`,
-            borderRadius: "16px", padding: "20px 24px",
-            marginBottom: "32px", display: "flex", gap: "16px", alignItems: "flex-start",
-          }}
-        >
-          <span style={{ fontSize: "20px", marginTop: "2px" }}>{theme.quoteIcon}</span>
-          <div>
-            <p style={{ color: theme.text, fontSize: "15px", fontStyle: "italic", lineHeight: 1.7, marginBottom: "8px", opacity: 0.85 }}>
-              {theme.quote}
-            </p>
-            <p style={{ color: theme.textMuted, fontSize: "12px", fontFamily: "sans-serif" }}>
-              {theme.quoteSource}
-            </p>
-          </div>
-        </motion.div>
-
-        {/* --- SECTION LABEL --- */}
-        <motion.p
-          variants={fadeUp} initial="hidden" animate="show" custom={2}
-          style={{ color: theme.textMuted, fontSize: "11px", letterSpacing: "0.14em", textTransform: "uppercase", fontFamily: "sans-serif", marginBottom: "14px", opacity: 0.7 }}
-        >
-          Where would you like to go?
-        </motion.p>
-
-        {/* --- THREE MAIN CARDS --- */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px", marginBottom: "24px" }}>
-          {[
-            { icon: "🌐", title: "Information Hub", desc: "Understand what you're feeling — in your own words, not clinical ones.", badge: "Explore topics", delay: 3 },
-            { icon: "✉️", title: "Message Board",   desc: "Share something you've never said out loud. Anonymously and safely.",  badge: "Anonymous & safe", delay: 4 },
-            { icon: "🧠", title: "Mentors",          desc: "Talk to someone who truly understands your world and your background.", badge: "Find a match",    delay: 5 },
-          ].map((card) => (
-            <motion.div
-              key={card.title}
-              variants={fadeUp} initial="hidden" animate="show" custom={card.delay}
-              whileHover={{ scale: 1.02, transition: { duration: 0.15 } }}
-              style={{
-                background: theme.cardBg,
-                border: `1px solid ${theme.cardBorder}`,
-                borderRadius: "16px", padding: "20px", cursor: "pointer",
-              }}
+        {/* ── Daily Pulse ────────────────────────────────── */}
+        <motion.section variants={fadeUp} initial="hidden" animate="show" custom={1}>
+          <div className="mb-4 flex items-center gap-2">
+            <Sparkles className="h-4 w-4" style={{ color: theme.accent }} />
+            <h2
+              className="text-xs font-semibold uppercase tracking-[0.15em]"
+              style={{ color: theme.textMuted, fontFamily: "sans-serif" }}
             >
-              <div style={{ fontSize: "20px", marginBottom: "12px" }}>{card.icon}</div>
-              <p style={{ color: theme.text, fontSize: "14px", fontFamily: "sans-serif", fontWeight: 600, marginBottom: "6px" }}>
-                {card.title}
-              </p>
-              <p style={{ color: theme.textMuted, fontSize: "12px", fontFamily: "sans-serif", lineHeight: 1.55, marginBottom: "14px" }}>
-                {card.desc}
-              </p>
-              <span style={{
-                display: "inline-block", background: theme.badgeBg, color: theme.badgeColor,
-                fontSize: "11px", borderRadius: "20px", padding: "4px 12px", fontFamily: "sans-serif",
-              }}>
-                {card.badge}
-              </span>
-            </motion.div>
-          ))}
-        </div>
+              Daily Pulse
+            </h2>
+          </div>
 
-        {/* --- BOTTOM ROW: Mood check-in + Unsent message --- */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-
-          {/* MOOD CHECK-IN */}
-          <motion.div
-            variants={fadeUp} initial="hidden" animate="show" custom={6}
-            style={{ background: theme.cardBg, border: `1px solid ${theme.cardBorder}`, borderRadius: "16px", padding: "20px" }}
-          >
-            <p style={{ color: theme.text, fontSize: "14px", fontFamily: "sans-serif", fontWeight: 600, marginBottom: "16px" }}>
-              How are you feeling right now?
-            </p>
-            <div style={{ display: "flex", gap: "8px" }}>
-              {moods.map((m) => (
-                <button
-                  key={m.label}
-                  onClick={() => setMood(m.label)}
-                  style={{
-                    flex: 1,
-                    background: mood === m.label ? theme.moodSelected : theme.cardBg,
-                    border: mood === m.label ? `2px solid ${theme.accentSoft}` : `1px solid ${theme.moodBorder}`,
-                    borderRadius: "12px", padding: "10px 4px",
-                    cursor: "pointer", transition: "all 0.2s", textAlign: "center",
-                  }}
-                >
-                  <span style={{ fontSize: "18px", display: "block", marginBottom: "4px" }}>{m.emoji}</span>
-                  <span style={{ color: mood === m.label ? theme.accent : theme.textMuted, fontSize: "10px", fontFamily: "sans-serif" }}>
-                    {m.label}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </motion.div>
-
-          {/* UNSENT MESSAGE */}
-          <motion.div
-            variants={fadeUp} initial="hidden" animate="show" custom={7}
+          <div
+            className="space-y-6 rounded-2xl p-6"
             style={{
-              background: theme.cardBg, border: `1px solid ${theme.cardBorder}`,
-              borderRadius: "16px", padding: "20px",
-              display: "flex", flexDirection: "column", justifyContent: "space-between",
+              backgroundColor: theme.cardBg,
+              border: `1px solid ${theme.cardBorder}`,
+              boxShadow: "0 1px 4px rgba(0,0,0,0.03)",
             }}
           >
+            {/* Mood row */}
             <div>
-              <p style={{ color: theme.text, fontSize: "14px", fontFamily: "sans-serif", fontWeight: 600, marginBottom: "8px" }}>
-                Unsent Message
+              <p
+                className="mb-3 text-sm font-semibold"
+                style={{ color: theme.text, fontFamily: "sans-serif" }}
+              >
+                How are you feeling right now?
               </p>
-              <p style={{ color: theme.textMuted, fontSize: "12px", fontFamily: "sans-serif", lineHeight: 1.6, marginBottom: "16px" }}>
-                Something you wish you could say — to anyone. It stays here, safe and private.
-              </p>
+              <div className="flex gap-2">
+                {MOODS.map((m) => {
+                  const active = mood === m.label;
+                  return (
+                    <button
+                      key={m.label}
+                      type="button"
+                      onClick={() => setMood(m.label)}
+                      className="flex-1 rounded-xl py-2.5 text-center transition"
+                      style={{
+                        backgroundColor: active ? theme.moodSelected : theme.cardBg,
+                        border: active
+                          ? `2px solid ${theme.accentSoft}`
+                          : `1px solid ${theme.moodBorder}`,
+                        cursor: "pointer",
+                      }}
+                    >
+                      <span className="block text-lg">{m.emoji}</span>
+                      <span
+                        className="mt-0.5 block text-[10px]"
+                        style={{
+                          color: active ? theme.accent : theme.textMuted,
+                          fontFamily: "sans-serif",
+                        }}
+                      >
+                        {m.label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
+
+            {/* Sliders */}
+            <div className="grid gap-5 sm:grid-cols-2">
+              <LevelSlider
+                label="Energy Level"
+                icon={Zap}
+                value={energy}
+                onChange={setEnergy}
+                theme={theme}
+              />
+              <LevelSlider
+                label="Focus Level"
+                icon={Target}
+                value={focus}
+                onChange={setFocus}
+                theme={theme}
+              />
+            </div>
+          </div>
+        </motion.section>
+
+        {/* ── The Roadmap ────────────────────────────────── */}
+        <motion.section variants={fadeUp} initial="hidden" animate="show" custom={2}>
+          <div className="mb-5 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4" style={{ color: theme.accent }} />
+              <h2
+                className="text-xs font-semibold uppercase tracking-[0.15em]"
+                style={{ color: theme.textMuted, fontFamily: "sans-serif" }}
+              >
+                The Roadmap
+              </h2>
+            </div>
+
             <button
-              onClick={() => router.push("/board")}
+              type="button"
+              onClick={handleSyncCalendar}
+              className="inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-medium transition"
               style={{
-                background: theme.btnBg, color: theme.btnColor,
-                border: "none", borderRadius: "10px",
-                padding: "11px 16px", fontSize: "13px",
-                fontFamily: "sans-serif", width: "100%", cursor: "pointer",
-                transition: "all 0.2s",
+                backgroundColor: calSynced ? `${theme.accent}10` : theme.cardBg,
+                border: `1px solid ${calSynced ? theme.accentSoft : theme.cardBorder}`,
+                color: calSynced ? theme.accent : theme.textMuted,
+                fontFamily: "sans-serif",
               }}
             >
-              Write something →
+              <Calendar className="h-3.5 w-3.5" />
+              {calSynced ? "Calendar Synced" : "Sync Google Calendar"}
             </button>
-          </motion.div>
+          </div>
 
-        </div>
+          {/* Timeline */}
+          <div className="space-y-3">
+            {ROADMAP_CARDS.map((card, i) => (
+              <motion.div
+                key={card.id}
+                variants={fadeUp}
+                initial="hidden"
+                animate="show"
+                custom={3 + i * 0.5}
+                className="relative rounded-2xl p-5 transition"
+                style={{
+                  backgroundColor: card.isCurrent
+                    ? theme.quoteBg
+                    : theme.cardBg,
+                  border: `1px solid ${card.isCurrent ? theme.accentSoft : theme.cardBorder}`,
+                  boxShadow: card.isCurrent
+                    ? `0 0 20px ${theme.accent}10, 0 2px 8px rgba(0,0,0,0.04)`
+                    : "0 1px 3px rgba(0,0,0,0.03)",
+                }}
+              >
+                {/* Current indicator */}
+                {card.isCurrent && (
+                  <div
+                    className="mb-3 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1"
+                    style={{
+                      backgroundColor: `${theme.accent}12`,
+                      fontFamily: "sans-serif",
+                    }}
+                  >
+                    <span
+                      className="h-1.5 w-1.5 animate-pulse rounded-full"
+                      style={{ backgroundColor: theme.accent }}
+                    />
+                    <span
+                      className="text-[10px] font-semibold uppercase tracking-wider"
+                      style={{ color: theme.accent }}
+                    >
+                      Current Task
+                    </span>
+                  </div>
+                )}
+
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-3">
+                      <span
+                        className="shrink-0 text-xs font-medium"
+                        style={{ color: theme.accent, fontFamily: "sans-serif" }}
+                      >
+                        {card.time}
+                      </span>
+                      <span
+                        className="rounded-full px-2 py-0.5 text-[10px]"
+                        style={{
+                          backgroundColor: `${theme.accent}08`,
+                          color: theme.textMuted,
+                          fontFamily: "sans-serif",
+                        }}
+                      >
+                        {card.duration}
+                      </span>
+                    </div>
+                    <h3
+                      className="mt-1.5 text-[15px] font-semibold"
+                      style={{ color: theme.text, fontFamily: "sans-serif" }}
+                    >
+                      {card.title}
+                    </h3>
+                    <p
+                      className="mt-1 text-xs leading-relaxed"
+                      style={{
+                        color: theme.textMuted,
+                        fontFamily: "sans-serif",
+                        fontStyle: "italic",
+                      }}
+                    >
+                      Why? {card.why}
+                    </p>
+                  </div>
+
+                  <ChevronRight
+                    className="mt-4 h-4 w-4 shrink-0"
+                    style={{ color: theme.cardBorder }}
+                  />
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </motion.section>
       </main>
     </div>
   );
